@@ -1,9 +1,10 @@
-﻿import React, { useEffect, useRef } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { DragControls } from 'three/examples/jsm/controls/DragControls';
+import { findPath, analyzePath } from '../../utils/pathAnalysis';
 
-const Scene = ({ habitatStructure, modules, onModulePositionUpdate }) => {
+const Scene = ({ habitatStructure, modules, onModulePositionUpdate, pathAnalysisMode, onPathAnalysis }) => {
   const containerRef = useRef(null);
   const sceneRef = useRef(null);
   const cameraRef = useRef(null);
@@ -12,6 +13,11 @@ const Scene = ({ habitatStructure, modules, onModulePositionUpdate }) => {
   const dragControlsRef = useRef(null);
   const moduleMeshesRef = useRef(new Map());
   const animationFrameRef = useRef(null);
+  const floorRef = useRef(null);
+  const raycasterRef = useRef(new THREE.Raycaster());
+  const mouseRef = useRef(new THREE.Vector2());
+  const pathVisualizationRef = useRef([]);
+  const [clickPoints, setClickPoints] = useState([]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -108,7 +114,9 @@ const Scene = ({ habitatStructure, modules, onModulePositionUpdate }) => {
     );
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = 0.01;
+    floor.receiveShadow = true;
     habitat.add(floor);
+    floorRef.current = floor;
 
     // Create grid
     const grid = new THREE.GridHelper(radius * 2, 20, 0x4488ff, 0x223355);
@@ -206,12 +214,215 @@ const Scene = ({ habitatStructure, modules, onModulePositionUpdate }) => {
     const mesh = new THREE.Mesh(spec.geo, new THREE.MeshStandardMaterial({ color: spec.color }));
     mesh.position.set(module.position.x, module.position.y, module.position.z);
     mesh.userData.moduleId = module.id;
+    mesh.userData.size = 1.5; // Size for collision detection
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     return mesh;
   };
 
-  return <div ref={containerRef} style={{ width: '100%', height: '100%', backgroundColor: '#0a0a1a' }} />;
+  // Path Analysis Mode - Click handling
+  useEffect(() => {
+    if (!rendererRef.current || !cameraRef.current || !sceneRef.current) return;
+
+    const handleClick = (event) => {
+      if (!pathAnalysisMode || !floorRef.current) return;
+
+      const rect = rendererRef.current.domElement.getBoundingClientRect();
+      mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
+      const intersects = raycasterRef.current.intersectObject(floorRef.current);
+
+      if (intersects.length > 0) {
+        const point = intersects[0].point;
+        const distance = Math.sqrt(point.x ** 2 + point.z ** 2);
+        
+        if (distance > habitatStructure.radius - 0.5) {
+          console.warn('Click outside habitat boundaries');
+          return;
+        }
+
+        // Add marker
+        const marker = new THREE.Mesh(
+          new THREE.SphereGeometry(0.15, 16, 16),
+          new THREE.MeshBasicMaterial({ color: 0xffff00 })
+        );
+        marker.position.set(point.x, 0.1, point.z);
+        sceneRef.current.add(marker);
+
+        setClickPoints(prev => {
+          const newPoints = [...prev, { x: point.x, z: point.z, marker }];
+          
+          if (newPoints.length === 2) {
+            calculatePath(newPoints[0], newPoints[1]);
+            return [];
+          }
+          
+          return newPoints;
+        });
+      }
+    };
+
+    const canvas = rendererRef.current.domElement;
+    canvas.addEventListener('click', handleClick);
+    canvas.style.cursor = pathAnalysisMode ? 'crosshair' : 'default';
+
+    return () => {
+      canvas.removeEventListener('click', handleClick);
+      canvas.style.cursor = 'default';
+    };
+  }, [pathAnalysisMode, habitatStructure]);
+
+  // Calculate and visualize path
+  const calculatePath = (start, end) => {
+    console.log('Calculating path from', start, 'to', end);
+
+    // Clear previous visualization
+    clearPathVisualization();
+
+    // Get module meshes as obstacles
+    const obstacles = Array.from(moduleMeshesRef.current.values());
+
+    // Find path (returns array of points or null)
+    const pathPoints = findPath(start, end, obstacles, habitatStructure);
+
+    if (!pathPoints || pathPoints.length === 0) {
+      console.warn('No valid path found');
+      // Schedule state update for next render
+      setTimeout(() => {
+        if (onPathAnalysis) {
+          onPathAnalysis(null);
+        }
+      }, 0);
+      return;
+    }
+
+    // Analyze clearance
+    const analysis = analyzePath(pathPoints, obstacles, habitatStructure);
+
+    console.log('Path analysis complete:', analysis);
+
+    // Visualize path
+    visualizePath(pathPoints, analysis);
+
+    // Report results (schedule for next render to avoid setState during render)
+    setTimeout(() => {
+      if (onPathAnalysis) {
+        onPathAnalysis(analysis);
+      }
+    }, 0);
+  };
+
+  // Visualize path with color coding
+  const visualizePath = (pathPoints, analysis) => {
+    if (!sceneRef.current) return;
+
+    const segments = analysis.clearanceValidation.segments;
+
+    // Draw segments
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i];
+      const start = new THREE.Vector3(segment.start.x, 0.3, segment.start.z);
+      const end = new THREE.Vector3(segment.end.x, 0.3, segment.end.z);
+
+      const direction = new THREE.Vector3().subVectors(end, start);
+      const length = direction.length();
+      const center = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+
+      const geometry = new THREE.CylinderGeometry(0.08, 0.08, length, 8);
+      const color = segment.passed ? 0x44ff44 : 0xff4444;
+      const material = new THREE.MeshBasicMaterial({ color });
+      const mesh = new THREE.Mesh(geometry, material);
+
+      mesh.position.copy(center);
+      mesh.lookAt(end);
+      mesh.rotateX(Math.PI / 2);
+
+      sceneRef.current.add(mesh);
+      pathVisualizationRef.current.push(mesh);
+    }
+
+    // Add distance label
+    const midpoint = pathPoints[Math.floor(pathPoints.length / 2)];
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = 256;
+    canvas.height = 64;
+    context.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.font = 'Bold 24px Arial';
+    context.fillStyle = 'white';
+    context.textAlign = 'center';
+    context.fillText(`${analysis.totalDistance.toFixed(2)}m`, 128, 40);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture }));
+    sprite.position.set(midpoint.x, 2, midpoint.z);
+    sprite.scale.set(3, 0.75, 1);
+    sceneRef.current.add(sprite);
+    pathVisualizationRef.current.push(sprite);
+  };
+
+  // Clear path visualization
+  const clearPathVisualization = () => {
+    if (!sceneRef.current) return;
+    
+    pathVisualizationRef.current.forEach(obj => {
+      sceneRef.current.remove(obj);
+      if (obj.geometry) obj.geometry.dispose();
+      if (obj.material) {
+        if (obj.material.map) obj.material.map.dispose();
+        obj.material.dispose();
+      }
+    });
+    pathVisualizationRef.current = [];
+
+    // Remove markers
+    clickPoints.forEach(point => {
+      if (point.marker) {
+        sceneRef.current.remove(point.marker);
+        point.marker.geometry.dispose();
+        point.marker.material.dispose();
+      }
+    });
+    setClickPoints([]);
+  };
+
+  // Clear visualization when exiting path analysis mode
+  useEffect(() => {
+    if (!pathAnalysisMode) {
+      clearPathVisualization();
+    }
+  }, [pathAnalysisMode]);
+
+  // Disable drag controls in path analysis mode
+  useEffect(() => {
+    if (dragControlsRef.current) {
+      dragControlsRef.current.enabled = !pathAnalysisMode;
+    }
+  }, [pathAnalysisMode]);
+
+  return (
+    <div ref={containerRef} style={{ width: '100%', height: '100%', backgroundColor: '#0a0a1a' }}>
+      {pathAnalysisMode && clickPoints.length === 1 && (
+        <div style={{
+          position: 'absolute',
+          bottom: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(68, 200, 136, 0.9)',
+          padding: '12px 24px',
+          borderRadius: '8px',
+          color: 'white',
+          fontWeight: 'bold',
+          zIndex: 10
+        }}>
+          Click a second point to complete path analysis
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default Scene;

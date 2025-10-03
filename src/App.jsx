@@ -65,13 +65,11 @@ const App = () => {
     if (pathAnalysisMode) {
       // Clear when turning off
       setPathAnalysis(null);
-      setPathModules({ start: null, end: null });
     }
   };
 
-  const handlePathAnalysis = (analysis, startModule, endModule) => {
-    setPathAnalysis(analysis);
-    setPathModules({ start: startModule, end: endModule });
+  const handlePathAnalysisComplete = (result) => {
+    setPathAnalysis(result);
   };
 
   return (
@@ -88,11 +86,11 @@ const App = () => {
             modules={modules}
             onModulePositionUpdate={updateModulePosition}
             pathAnalysisMode={pathAnalysisMode}
-            onPathAnalysis={handlePathAnalysis}
+            onPathAnalysis={handlePathAnalysisComplete}
           />
           {pathAnalysisMode && (
             <div className="path-overlay-info">
-              <p>🖱️ Click two modules to analyze the crew path</p>
+              <p>🖱️ Click two points on the habitat floor to analyze the crew path</p>
             </div>
           )}
         </div>
@@ -100,9 +98,7 @@ const App = () => {
           <PathAnalysisPanel 
             pathAnalysisMode={pathAnalysisMode}
             onToggleMode={handleTogglePathAnalysis}
-            pathAnalysis={pathAnalysis}
-            startModule={pathModules.start}
-            endModule={pathModules.end}
+            pathResult={pathAnalysis}
           />
           <DesignPanel 
             habitatStructure={habitatStructure}

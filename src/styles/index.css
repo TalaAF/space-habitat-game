@@ -1079,3 +1079,278 @@ body {
   color: #ff8844;
   border: 1px solid rgba(255, 136, 68, 0.3);
 }
+/* Path Analysis Panel */
+.path-analysis-panel {
+  background: rgba(10, 10, 30, 0.95);
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  border: 2px solid rgba(68, 136, 255, 0.3);
+}
+
+.btn-path-toggle {
+  width: 100%;
+  padding: 15px;
+  margin: 10px 0;
+  background: linear-gradient(135deg, #4488ff, #6644ff);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn-path-toggle.active {
+  background: linear-gradient(135deg, #44ff88, #44ccff);
+  box-shadow: 0 0 20px rgba(68, 255, 136, 0.5);
+}
+
+.btn-path-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(68, 136, 255, 0.4);
+}
+
+.btn-icon {
+  font-size: 1.2em;
+}
+
+.path-instructions {
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border-left: 3px solid #4488ff;
+}
+
+.instruction-box {
+  margin-bottom: 15px;
+}
+
+.instruction-box strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #44ccff;
+}
+
+.instruction-box ol {
+  margin-left: 20px;
+  line-height: 1.8;
+}
+
+.instruction-box li {
+  margin: 5px 0;
+}
+
+.path-legend {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.legend-title {
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #44ccff;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+}
+
+.legend-color {
+  width: 30px;
+  height: 15px;
+  border-radius: 3px;
+}
+
+.legend-color.green {
+  background: #44ff44;
+}
+
+.legend-color.red {
+  background: #ff4444;
+}
+
+.path-results {
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 10px;
+  animation: slideIn 0.3s ease-out;
+}
+
+.path-results.pass {
+  background: rgba(68, 255, 68, 0.1);
+  border: 2px solid #44ff44;
+}
+
+.path-results.fail {
+  background: rgba(255, 68, 68, 0.1);
+  border: 2px solid #ff4444;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.results-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.status-icon {
+  font-size: 2em;
+}
+
+.status-text {
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.results-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+}
+
+.metric-label {
+  font-size: 0.85em;
+  color: #aaa;
+  margin-bottom: 5px;
+}
+
+.metric-value {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #fff;
+}
+
+.metric-value.good {
+  color: #44ff88;
+}
+
+.metric-value.bad {
+  color: #ff4444;
+}
+
+.nasa-compliance {
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+}
+
+.nasa-compliance h4 {
+  margin-bottom: 10px;
+  color: #4488ff;
+}
+
+.compliance-info {
+  margin-bottom: 15px;
+  padding: 12px;
+  background: rgba(68, 136, 255, 0.1);
+  border-radius: 6px;
+  border-left: 3px solid #4488ff;
+}
+
+.compliance-info strong {
+  color: #44ccff;
+}
+
+.compliance-info em {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.85em;
+  color: #888;
+}
+
+.compliance-message {
+  padding: 15px;
+  border-radius: 8px;
+  line-height: 1.6;
+}
+
+.compliance-message.pass {
+  background: rgba(68, 255, 136, 0.1);
+  border-left: 3px solid #44ff88;
+  color: #44ff88;
+}
+
+.compliance-message.fail {
+  background: rgba(255, 68, 68, 0.1);
+  border-left: 3px solid #ff4444;
+  color: #ffcccc;
+}
+
+.recommendations {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.recommendations strong {
+  display: block;
+  margin-bottom: 10px;
+  color: #ffaa44;
+}
+
+.recommendations ul {
+  margin-left: 20px;
+  line-height: 1.8;
+}
+
+.recommendations li {
+  margin: 6px 0;
+}
+
+.path-overlay-info {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(68, 136, 255, 0.95);
+  padding: 15px 30px;
+  border-radius: 10px;
+  color: white;
+  font-weight: bold;
+  z-index: 100;
+  box-shadow: 0 5px 20px rgba(68, 136, 255, 0.5);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.05);
+  }
+}

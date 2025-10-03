@@ -1,8 +1,9 @@
 // NASA Crew Path & Access Analysis Tool
 // Based on NASA habitat evaluation criteria for minimum translation path width
 
-// NASA Standard: Minimum clear width for crew passage ~0.86m (34 inches)
-export const MIN_PATH_WIDTH = 0.86;
+// NASA Standard: Minimum clear width for crew passage 1.0m (39.4 inches)
+// Reference: "Internal Layout of a Lunar Surface Habitat"
+export const MIN_PATH_WIDTH = 1.0;
 export const GRID_SIZE = 0.5; // Path grid resolution
 
 class PathNode {
@@ -200,58 +201,70 @@ export function findPath(startPos, endPos, modules, habitatStructure) {
     }
   }
   
-  // No path found, return direct line
-  return [
-    { x: startPos.x, y: startPos.y, z: startPos.z },
-    { x: endPos.x, y: endPos.y, z: endPos.z }
-  ];
+  // No path found, return null
+  return null;
 }
 
 // Analyze path for width constraints
 export function analyzePath(path, modules, habitatStructure) {
   if (!path || path.length < 2) {
     return {
-      segments: [],
       totalDistance: 0,
+      totalSegments: 0,
       clearSegments: 0,
-      obstructedSegments: 0,
-      isFullyClear: true
+      narrowSegments: 0,
+      minWidth: MIN_PATH_WIDTH,
+      passes: false,
+      clearanceValidation: {
+        segments: []
+      }
     };
   }
 
   const segments = [];
   let totalDistance = 0;
   let clearCount = 0;
-  let obstructedCount = 0;
+  let narrowCount = 0;
+  let minWidth = Infinity;
 
   for (let i = 0; i < path.length - 1; i++) {
     const start = path[i];
     const end = path[i + 1];
     const segmentDistance = distance(start, end);
-    const isClear = checkPathWidth(start, end, modules, habitatStructure);
+    const hasClearance = checkPathWidth(start, end, modules, habitatStructure);
+    
+    // For visualization, assume minimum width if clear
+    const segmentWidth = hasClearance ? MIN_PATH_WIDTH : MIN_PATH_WIDTH * 0.5;
+    if (segmentWidth < minWidth) {
+      minWidth = segmentWidth;
+    }
     
     segments.push({
       start,
       end,
       distance: segmentDistance,
-      isClear
+      passed: hasClearance,
+      clearance: segmentWidth
     });
     
     totalDistance += segmentDistance;
-    if (isClear) {
+    if (hasClearance) {
       clearCount++;
     } else {
-      obstructedCount++;
+      narrowCount++;
     }
   }
 
   return {
-    segments,
     totalDistance,
+    totalSegments: segments.length,
     clearSegments: clearCount,
-    obstructedSegments: obstructedCount,
-    isFullyClear: obstructedCount === 0,
-    pathPoints: path
+    narrowSegments: narrowCount,
+    minWidth: minWidth === Infinity ? 0 : minWidth,
+    passes: narrowCount === 0,
+    clearanceValidation: {
+      segments
+    }
   };
 }
 
