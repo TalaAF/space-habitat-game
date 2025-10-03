@@ -55,7 +55,15 @@ export const VOLUME_REQUIREMENTS = {
 // NASA Mass Limits based on delivery systems
 export const MASS_LIMITS = {
   lunar: 12, // metric tons - Lunar Lander capacity
-  mars: 26.4 // metric tons - Mars Transit Vehicle capacity
+  marsTransit: 26.4, // metric tons - Mars Transit Vehicle capacity
+  marsSurface: 18 // metric tons - Mars Surface deployment
+};
+
+// Construction Type Multipliers (from NASA-CP-97-206241-Cohen.pdf)
+export const CONSTRUCTION_MULTIPLIERS = {
+  rigid: { mass: 1.0, volume: 1.0 },
+  inflatable: { mass: 0.6, volume: 1.8 },
+  isru: { mass: 0.3, volume: 2.0 }
 };
 
 // Required modules for mission types
@@ -63,7 +71,7 @@ export const MISSION_REQUIREMENTS = {
   lunar: {
     short: {
       essential: ['power', 'airlock'],
-      crewQuarters: true, // 1 per crew member
+      crewQuarters: true,
       minPower: 1
     },
     mid: {
@@ -79,43 +87,70 @@ export const MISSION_REQUIREMENTS = {
       minLifeSupport: 1
     }
   },
-  mars: {
+  marsTransit: {
     short: {
-      essential: ['power', 'airlock', 'medical'],
+      essential: ['power', 'medical'],
       crewQuarters: true,
       minPower: 1,
-      requiresShielding: true
+      requiresRadiationShielding: true
     },
     mid: {
-      essential: ['power', 'airlock', 'medical', 'greenhouse'],
+      essential: ['power', 'medical', 'storage'],
+      crewQuarters: true,
+      minPower: 2,
+      requiresRadiationShielding: true
+    },
+    extended: {
+      essential: ['power', 'medical', 'greenhouse', 'storage'],
       crewQuarters: true,
       minPower: 2,
       minLifeSupport: 1,
-      requiresShielding: true
+      requiresRadiationShielding: true,
+      minStorage: 2
+    }
+  },
+  marsSurface: {
+    short: {
+      essential: ['power', 'airlock', 'greenhouse'],
+      crewQuarters: true,
+      minPower: 1,
+      minLifeSupport: 1
+    },
+    mid: {
+      essential: ['power', 'airlock', 'greenhouse', 'lab'],
+      crewQuarters: true,
+      minPower: 2,
+      minLifeSupport: 1,
+      minScience: 1
     },
     extended: {
-      essential: ['power', 'airlock', 'medical', 'greenhouse'],
+      essential: ['power', 'airlock', 'greenhouse', 'lab', 'medical'],
       crewQuarters: true,
       minPower: 2,
       minLifeSupport: 2,
       minScience: 1,
-      requiresShielding: true,
-      minStorage: 2
+      encouragesISRU: true,
+      minStorage: 1
     }
   }
 };
 
 export const validateMissionLayout = (modules, habitatStructure, missionParams) => {
-  const { crewSize, destination, duration } = missionParams;
+  const { crewSize, destination, duration, constructionType } = missionParams;
   const results = {
     passed: false,
     checks: []
   };
 
-  // 1. Calculate total mass
-  const totalMass = modules.reduce((sum, module) => {
+  // Get construction type multipliers
+  const constructionMultiplier = CONSTRUCTION_MULTIPLIERS[constructionType] || CONSTRUCTION_MULTIPLIERS.rigid;
+
+  // 1. Calculate total mass with construction type multiplier
+  const baseMass = modules.reduce((sum, module) => {
     return sum + (MODULE_SPECS[module.type]?.mass || 0);
   }, 0);
+  
+  const totalMass = baseMass * constructionMultiplier.mass;
 
   const massLimit = MASS_LIMITS[destination];
   const massCheck = {
@@ -124,14 +159,16 @@ export const validateMissionLayout = (modules, habitatStructure, missionParams) 
     current: totalMass.toFixed(2),
     required: massLimit.toFixed(2),
     unit: 'metric tons',
-    description: `Total habitat mass must not exceed ${destination === 'lunar' ? 'Lunar Lander' : 'Mars Transit Vehicle'} capacity`
+    description: `Total habitat mass with ${constructionType} construction (${(constructionMultiplier.mass * 100).toFixed(0)}% of base)`
   };
   results.checks.push(massCheck);
 
-  // 2. Calculate total pressurized volume
-  const totalVolume = modules.reduce((sum, module) => {
+  // 2. Calculate total pressurized volume with construction type multiplier
+  const baseVolume = modules.reduce((sum, module) => {
     return sum + (MODULE_SPECS[module.type]?.volume || 0);
   }, 0);
+  
+  const totalVolume = baseVolume * constructionMultiplier.volume;
 
   const requiredVolume = VOLUME_REQUIREMENTS[duration] * crewSize;
   const volumeCheck = {
@@ -140,7 +177,7 @@ export const validateMissionLayout = (modules, habitatStructure, missionParams) 
     current: totalVolume.toFixed(1),
     required: requiredVolume.toFixed(1),
     unit: 'm³',
-    description: `Pressurized volume for ${crewSize} crew over ${duration} duration`
+    description: `Pressurized volume for ${crewSize} crew (${constructionType}: ${(constructionMultiplier.volume * 100).toFixed(0)}% efficiency)`
   };
   results.checks.push(volumeCheck);
 
@@ -185,7 +222,7 @@ export const validateMissionLayout = (modules, habitatStructure, missionParams) 
     results.checks.push(lifeSupportCheck);
   }
 
-  // Medical bay (required for Mars)
+  // Medical bay
   if (requirements.essential.includes('medical')) {
     const medicalCount = modules.filter(m => m.type === 'medical').length;
     const medicalCheck = {
@@ -194,9 +231,51 @@ export const validateMissionLayout = (modules, habitatStructure, missionParams) 
       current: medicalCount,
       required: 1,
       unit: 'module',
-      description: 'Medical bay required for Mars missions'
+      description: 'Medical bay required for long-duration missions'
     };
     results.checks.push(medicalCheck);
+  }
+
+  // Radiation Shielding (Mars Transit)
+  if (requirements.requiresRadiationShielding) {
+    const storageCount = modules.filter(m => m.type === 'storage').length;
+    const radiationCheck = {
+      name: 'Radiation Protection',
+      passed: storageCount >= 2, // Storage modules can serve as shielding
+      current: storageCount,
+      required: 2,
+      unit: 'modules',
+      description: 'Storage modules provide radiation shielding for Mars transit'
+    };
+    results.checks.push(radiationCheck);
+  }
+
+  // Science Lab (Mars Surface)
+  if (requirements.essential.includes('lab')) {
+    const labCount = modules.filter(m => m.type === 'lab').length;
+    const labCheck = {
+      name: 'Science Laboratory',
+      passed: labCount >= 1,
+      current: labCount,
+      required: 1,
+      unit: 'module',
+      description: 'Research laboratory for Mars surface operations'
+    };
+    results.checks.push(labCheck);
+  }
+
+  // ISRU Construction Requirement
+  if (constructionType === 'isru') {
+    const hasISRUModule = modules.some(m => m.type === 'lab' || m.type === 'storage');
+    const isruCheck = {
+      name: 'ISRU Construction',
+      passed: hasISRUModule,
+      current: hasISRUModule ? 1 : 0,
+      required: 1,
+      unit: 'module',
+      description: 'ISRU construction requires Construction Rover or ISRU Plant (Lab/Storage)'
+    };
+    results.checks.push(isruCheck);
   }
 
   // Airlock

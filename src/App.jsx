@@ -24,7 +24,8 @@ const App = () => {
   const [missionParams, setMissionParams] = useState({
     crewSize: 4,
     destination: 'lunar',
-    duration: 'short'
+    duration: 'short',
+    constructionType: 'rigid' // rigid, inflatable, or isru
   });
 
   const [validationResults, setValidationResults] = useState(null);

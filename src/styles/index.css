@@ -570,6 +570,43 @@ body {
   font-weight: bold;
 }
 
+.summary-item.mission-challenge {
+  background: rgba(255, 136, 0, 0.1);
+  padding: 10px;
+  border-radius: 6px;
+  border-left: 3px solid #ff8800;
+  margin-top: 8px;
+}
+
+.summary-item.mission-challenge span:last-child {
+  color: #ff8800;
+}
+
+/* Parameter Hints */
+.param-hint {
+  background: rgba(68, 200, 136, 0.1);
+  padding: 10px;
+  border-radius: 6px;
+  border-left: 3px solid #44c888;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: #aaa;
+}
+
+.param-hint strong {
+  color: #44c888;
+  display: inline-block;
+  min-width: 110px;
+}
+
+.param-hint em {
+  display: block;
+  margin-top: 6px;
+  color: #888;
+  font-style: italic;
+}
+
 /* Module Specs */
 .module-specs {
   display: flex;
