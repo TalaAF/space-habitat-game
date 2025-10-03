@@ -1,120 +1,188 @@
 // NASA Crew Path & Access Analysis Tool
-// Based on NASA habitat evaluation criteria for minimum translation path width
-
-// NASA Standard: Minimum clear width for crew passage 1.0m (39.4 inches)
+// Data-Driven A* Pathfinding with Clearance Validation
 // Reference: "Internal Layout of a Lunar Surface Habitat"
-export const MIN_PATH_WIDTH = 1.0;
-export const GRID_SIZE = 0.5; // Path grid resolution
 
-class PathNode {
-  constructor(x, y, z) {
-    this.x = x;
-    this.y = y;
+export const MIN_PATH_WIDTH = 1.0; // NASA standard: 1.0m (39.4 inches)
+export const GRID_RESOLUTION = 0.5; // 50cm grid cells
+
+// ============================================================================
+// A* PATHFINDING ALGORITHM
+// ============================================================================
+
+class GridNode {
+  constructor(x, z, worldX, worldZ) {
+    this.x = x; // Grid coordinates
     this.z = z;
+    this.worldX = worldX; // World coordinates
+    this.worldZ = worldZ;
     this.g = 0; // Cost from start
-    this.h = 0; // Heuristic cost to end
+    this.h = 0; // Heuristic to end
     this.f = 0; // Total cost
     this.parent = null;
-  }
-
-  equals(other) {
-    return this.x === other.x && this.y === other.y && this.z === other.z;
+    this.walkable = true;
   }
 }
 
-// Calculate Euclidean distance
-function distance(a, b) {
-  return Math.sqrt(
-    Math.pow(a.x - b.x, 2) +
-    Math.pow(a.y - b.y, 2) +
-    Math.pow(a.z - b.z, 2)
-  );
-}
-
-// Check if a point is occupied by a module
-function isOccupied(point, modules, tolerance = 0.7) {
+// Create 2D navigation grid
+function createNavigationGrid(habitatStructure, modules) {
+  const radius = habitatStructure.radius;
+  const gridSize = Math.ceil((radius * 2.2) / GRID_RESOLUTION); // Add 10% padding
+  const grid = [];
+  
+  console.log(`📐 Creating ${gridSize}x${gridSize} navigation grid (habitat radius: ${radius}m)...`);
+  
+  // Initialize grid
+  for (let x = 0; x < gridSize; x++) {
+    grid[x] = [];
+    for (let z = 0; z < gridSize; z++) {
+      const worldX = (x - gridSize / 2) * GRID_RESOLUTION;
+      const worldZ = (z - gridSize / 2) * GRID_RESOLUTION;
+      grid[x][z] = new GridNode(x, z, worldX, worldZ);
+      
+      // Check if cell is within habitat bounds (with small margin)
+      const distFromCenter = Math.sqrt(worldX * worldX + worldZ * worldZ);
+      if (distFromCenter > radius - 0.3) {
+        grid[x][z].walkable = false;
+      }
+    }
+  }
+  
+  // Mark cells occupied by modules as unwalkable
+  let blockedCells = 0;
   for (const module of modules) {
-    const dx = Math.abs(point.x - module.position.x);
-    const dy = Math.abs(point.y - module.position.y);
-    const dz = Math.abs(point.z - module.position.z);
+    const modulePos = module.position;
+    const moduleSize = (module.userData && module.userData.size) || 1.5;
     
-    if (dx < tolerance && dy < tolerance && dz < tolerance) {
-      return true;
-    }
-  }
-  return false;
-}
-
-// Check if a path segment has minimum clear width
-function checkPathWidth(start, end, modules, habitatStructure) {
-  const MIN_WIDTH = MIN_PATH_WIDTH;
-  const checks = 5; // Number of points to check along the segment
-  
-  for (let i = 0; i <= checks; i++) {
-    const t = i / checks;
-    const checkPoint = {
-      x: start.x + (end.x - start.x) * t,
-      y: start.y + (end.y - start.y) * t,
-      z: start.z + (end.z - start.z) * t
-    };
+    // ✅ TWO-STEP APPROACH: Use a smaller, fixed "keep-out" buffer during pathfinding.
+    // This allows A* to find paths through tight spaces in high-density layouts.
+    // The strict 1.0m NASA clearance check happens later in analyzePath().
+    const moduleRadius = moduleSize / 2 + 0.3;
     
-    // Check perpendicular clearance (simplified 2D check on XZ plane)
-    const dx = end.x - start.x;
-    const dz = end.z - start.z;
-    const length = Math.sqrt(dx * dx + dz * dz);
-    
-    if (length === 0) continue;
-    
-    // Perpendicular direction
-    const perpX = -dz / length;
-    const perpZ = dx / length;
-    
-    // Check both sides
-    for (let side = -1; side <= 1; side += 2) {
-      const checkX = checkPoint.x + perpX * MIN_WIDTH * side * 0.5;
-      const checkZ = checkPoint.z + perpZ * MIN_WIDTH * side * 0.5;
-      
-      // Check if this point is inside habitat bounds
-      const distFromCenter = Math.sqrt(checkX * checkX + checkZ * checkZ);
-      if (habitatStructure.shape === 'cylinder') {
-        if (distFromCenter > habitatStructure.radius - 0.3) {
-          return false; // Too close to wall
+    for (let x = 0; x < gridSize; x++) {
+      for (let z = 0; z < gridSize; z++) {
+        const node = grid[x][z];
+        const dx = node.worldX - modulePos.x;
+        const dz = node.worldZ - modulePos.z;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        
+        if (dist < moduleRadius) {
+          node.walkable = false;
+          blockedCells++;
         }
-      } else if (habitatStructure.shape === 'dome') {
-        if (distFromCenter > habitatStructure.radius - 0.3) {
-          return false;
-        }
-      }
-      
-      // Check if blocked by module
-      if (isOccupied({ x: checkX, y: checkPoint.y, z: checkZ }, modules, 0.5)) {
-        return false;
       }
     }
   }
   
-  return true;
+  const totalCells = gridSize * gridSize;
+  const blockPercentage = ((blockedCells / totalCells) * 100).toFixed(1);
+  console.log(`  ✓ Grid created: ${blockedCells}/${totalCells} cells blocked (${blockPercentage}%)`);
+  return grid;
 }
 
-// A* Pathfinding Algorithm
+// Get grid coordinates from world position
+function worldToGrid(worldX, worldZ, grid) {
+  const gridSize = grid.length;
+  const x = Math.round((worldX / GRID_RESOLUTION) + gridSize / 2);
+  const z = Math.round((worldZ / GRID_RESOLUTION) + gridSize / 2);
+  
+  if (x >= 0 && x < gridSize && z >= 0 && z < gridSize) {
+    return grid[x][z];
+  }
+  return null;
+}
+
+// Heuristic function (Euclidean distance)
+function heuristic(nodeA, nodeB) {
+  const dx = nodeA.worldX - nodeB.worldX;
+  const dz = nodeA.worldZ - nodeB.worldZ;
+  return Math.sqrt(dx * dx + dz * dz);
+}
+
+// Get walkable neighbors (8 directions)
+function getNeighbors(node, grid) {
+  const neighbors = [];
+  const directions = [
+    [0, 1], [1, 0], [0, -1], [-1, 0],  // Cardinal
+    [1, 1], [1, -1], [-1, 1], [-1, -1] // Diagonal
+  ];
+  
+  for (const [dx, dz] of directions) {
+    const newX = node.x + dx;
+    const newZ = node.z + dz;
+    
+    if (newX >= 0 && newX < grid.length && newZ >= 0 && newZ < grid[0].length) {
+      const neighbor = grid[newX][newZ];
+      if (neighbor.walkable) {
+        neighbors.push(neighbor);
+      }
+    }
+  }
+  
+  return neighbors;
+}
+
+// A* pathfinding algorithm
 export function findPath(startPos, endPos, modules, habitatStructure) {
-  const start = new PathNode(
-    Math.round(startPos.x / GRID_SIZE) * GRID_SIZE,
-    Math.round(startPos.y / GRID_SIZE) * GRID_SIZE,
-    Math.round(startPos.z / GRID_SIZE) * GRID_SIZE
-  );
+  console.log('🔍 A* Pathfinding:');
+  console.log(`  Start: (${startPos.x.toFixed(2)}, ${startPos.z.toFixed(2)})`);
+  console.log(`  End: (${endPos.x.toFixed(2)}, ${endPos.z.toFixed(2)})`);
+  console.log(`  Obstacles: ${modules.length} modules`);
   
-  const end = new PathNode(
-    Math.round(endPos.x / GRID_SIZE) * GRID_SIZE,
-    Math.round(endPos.y / GRID_SIZE) * GRID_SIZE,
-    Math.round(endPos.z / GRID_SIZE) * GRID_SIZE
-  );
-
-  const openSet = [start];
-  const closedSet = [];
-  const maxIterations = 1000;
+  // Create navigation grid
+  const grid = createNavigationGrid(habitatStructure, modules);
+  
+  // Get start and end nodes
+  const startNode = worldToGrid(startPos.x, startPos.z, grid);
+  const endNode = worldToGrid(endPos.x, endPos.z, grid);
+  
+  if (!startNode || !endNode) {
+    console.error('  ❌ Start or end point outside grid');
+    return null;
+  }
+  
+  // Always allow start and end points (user clicked floor, trust their selection)
+  if (!startNode.walkable) {
+    console.log('  ℹ️ Start point in blocked cell - allowing as clicked point');
+    startNode.walkable = true;
+    
+    // Unblock immediate neighbors to ensure pathfinding can start
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dz = -1; dz <= 1; dz++) {
+        const nx = startNode.x + dx;
+        const nz = startNode.z + dz;
+        if (nx >= 0 && nx < grid.length && nz >= 0 && nz < grid[0].length) {
+          grid[nx][nz].walkable = true;
+        }
+      }
+    }
+  }
+  
+  if (!endNode.walkable) {
+    console.log('  ℹ️ End point in blocked cell - allowing as clicked point');
+    endNode.walkable = true;
+    
+    // Unblock immediate neighbors to ensure pathfinding can reach goal
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dz = -1; dz <= 1; dz++) {
+        const nx = endNode.x + dx;
+        const nz = endNode.z + dz;
+        if (nx >= 0 && nx < grid.length && nz >= 0 && nz < grid[0].length) {
+          grid[nx][nz].walkable = true;
+        }
+      }
+    }
+  }
+  
+  // Initialize A*
+  const openSet = [startNode];
+  const closedSet = new Set();
+  startNode.g = 0;
+  startNode.h = heuristic(startNode, endNode);
+  startNode.f = startNode.h;
+  
   let iterations = 0;
-
+  const maxIterations = 50000; // Increased for complex layouts
+  
   while (openSet.length > 0 && iterations < maxIterations) {
     iterations++;
     
@@ -128,165 +196,204 @@ export function findPath(startPos, endPos, modules, habitatStructure) {
     
     const current = openSet[currentIndex];
     
-    // Check if we reached the goal
-    if (current.equals(end)) {
+    // Check if reached goal
+    if (current === endNode) {
+      // Reconstruct path
       const path = [];
       let temp = current;
       while (temp) {
-        path.unshift({ x: temp.x, y: temp.y, z: temp.z });
+        path.unshift({
+          x: temp.worldX,
+          y: 0.1,
+          z: temp.worldZ
+        });
         temp = temp.parent;
       }
+      
+      console.log(`  ✅ Path found: ${path.length} waypoints in ${iterations} iterations`);
       return path;
     }
     
-    // Move current from open to closed
+    // Move current to closed set
     openSet.splice(currentIndex, 1);
-    closedSet.push(current);
+    closedSet.add(current);
     
-    // Generate neighbors (8 directions on XZ plane, same Y level)
-    const neighbors = [
-      new PathNode(current.x + GRID_SIZE, current.y, current.z),
-      new PathNode(current.x - GRID_SIZE, current.y, current.z),
-      new PathNode(current.x, current.y, current.z + GRID_SIZE),
-      new PathNode(current.x, current.y, current.z - GRID_SIZE),
-      new PathNode(current.x + GRID_SIZE, current.y, current.z + GRID_SIZE),
-      new PathNode(current.x - GRID_SIZE, current.y, current.z + GRID_SIZE),
-      new PathNode(current.x + GRID_SIZE, current.y, current.z - GRID_SIZE),
-      new PathNode(current.x - GRID_SIZE, current.y, current.z - GRID_SIZE)
-    ];
+    // Check all neighbors
+    const neighbors = getNeighbors(current, grid);
     
     for (const neighbor of neighbors) {
-      // Check if neighbor is in closed set
-      if (closedSet.some(node => node.equals(neighbor))) {
-        continue;
-      }
+      if (closedSet.has(neighbor)) continue;
       
-      // Check if neighbor is valid (not occupied and within bounds)
-      const distFromCenter = Math.sqrt(neighbor.x * neighbor.x + neighbor.z * neighbor.z);
-      if (habitatStructure.shape === 'cylinder') {
-        if (distFromCenter > habitatStructure.radius - 0.5) {
-          continue;
-        }
-      } else if (habitatStructure.shape === 'dome') {
-        if (distFromCenter > habitatStructure.radius - 0.5) {
-          continue;
-        }
-      }
+      // Calculate tentative g score
+      const tentativeG = current.g + heuristic(current, neighbor);
       
-      if (isOccupied(neighbor, modules.filter(m => 
-        m.position.x !== startPos.x || m.position.z !== startPos.z
-      ), 0.6)) {
-        continue;
-      }
+      const inOpenSet = openSet.includes(neighbor);
       
-      // Calculate costs
-      const gScore = current.g + distance(current, neighbor);
-      
-      // Check if neighbor is already in open set
-      const existingIndex = openSet.findIndex(node => node.equals(neighbor));
-      
-      if (existingIndex === -1) {
-        // Not in open set, add it
-        neighbor.g = gScore;
-        neighbor.h = distance(neighbor, end);
-        neighbor.f = neighbor.g + neighbor.h;
+      if (!inOpenSet || tentativeG < neighbor.g) {
         neighbor.parent = current;
-        openSet.push(neighbor);
-      } else if (gScore < openSet[existingIndex].g) {
-        // Found a better path to this neighbor
-        openSet[existingIndex].g = gScore;
-        openSet[existingIndex].f = gScore + openSet[existingIndex].h;
-        openSet[existingIndex].parent = current;
+        neighbor.g = tentativeG;
+        neighbor.h = heuristic(neighbor, endNode);
+        neighbor.f = neighbor.g + neighbor.h;
+        
+        if (!inOpenSet) {
+          openSet.push(neighbor);
+        }
       }
+    }
+    
+    // Debug logging for early termination
+    if (iterations % 1000 === 0) {
+      console.log(`  ⏳ Progress: ${iterations} iterations, openSet: ${openSet.length}, closed: ${closedSet.size}`);
     }
   }
   
-  // No path found, return null
+  console.error(`  ❌ No path found after ${iterations} iterations`);
+  console.error(`  Final state: openSet=${openSet.length}, closedSet=${closedSet.size}`);
   return null;
 }
 
-// Analyze path for width constraints
-export function analyzePath(path, modules, habitatStructure) {
-  if (!path || path.length < 2) {
+// ============================================================================
+// CLEARANCE ANALYSIS
+// ============================================================================
+
+// Measure clearance at a specific point
+function measureClearance(point, pathDirection, modules, habitatStructure) {
+  // Perpendicular direction
+  const perpX = -pathDirection.z;
+  const perpZ = pathDirection.x;
+  
+  let minClearanceLeft = Infinity;
+  let minClearanceRight = Infinity;
+  
+  // Check distance to modules
+  for (const module of modules) {
+    const modulePos = module.position;
+    const moduleSize = (module.userData && module.userData.size) || 1.5;
+    const moduleRadius = moduleSize / 2;
+    
+    const toModuleX = modulePos.x - point.x;
+    const toModuleZ = modulePos.z - point.z;
+    const distance = Math.sqrt(toModuleX * toModuleX + toModuleZ * toModuleZ);
+    const clearance = Math.max(0, distance - moduleRadius);
+    
+    // Determine side
+    const side = toModuleX * perpX + toModuleZ * perpZ;
+    if (side < 0) {
+      minClearanceLeft = Math.min(minClearanceLeft, clearance);
+    } else {
+      minClearanceRight = Math.min(minClearanceRight, clearance);
+    }
+  }
+  
+  // Check distance to habitat boundary
+  const distFromCenter = Math.sqrt(point.x * point.x + point.z * point.z);
+  const boundaryDist = Math.max(0, habitatStructure.radius - distFromCenter - 0.3);
+  
+  if (minClearanceLeft === Infinity) minClearanceLeft = boundaryDist;
+  if (minClearanceRight === Infinity) minClearanceRight = boundaryDist;
+  
+  // Total corridor width
+  const corridorWidth = Math.min(
+    minClearanceLeft + minClearanceRight,
+    boundaryDist * 2
+  );
+  
+  return Math.max(0, corridorWidth);
+}
+
+// Analyze path segment clearance
+function analyzeSegment(startPoint, endPoint, modules, habitatStructure) {
+  const dx = endPoint.x - startPoint.x;
+  const dz = endPoint.z - startPoint.z;
+  const length = Math.sqrt(dx * dx + dz * dz);
+  
+  if (length === 0) return { minWidth: MIN_PATH_WIDTH, passes: true };
+  
+  const direction = { x: dx / length, z: dz / length };
+  let minWidth = Infinity;
+  
+  // Check clearance at 5 points along segment
+  for (let i = 0; i <= 5; i++) {
+    const t = i / 5;
+    const checkPoint = {
+      x: startPoint.x + dx * t,
+      z: startPoint.z + dz * t
+    };
+    
+    const width = measureClearance(checkPoint, direction, modules, habitatStructure);
+    minWidth = Math.min(minWidth, width);
+  }
+  
+  return {
+    minWidth: minWidth === Infinity ? 100 : Math.min(minWidth, 100),
+    passes: minWidth >= MIN_PATH_WIDTH
+  };
+}
+
+// Analyze complete path
+export function analyzePath(pathPoints, modules, habitatStructure) {
+  if (!pathPoints || pathPoints.length < 2) {
     return {
       totalDistance: 0,
       totalSegments: 0,
       clearSegments: 0,
       narrowSegments: 0,
-      minWidth: MIN_PATH_WIDTH,
+      minWidth: 0,
       passes: false,
-      clearanceValidation: {
-        segments: []
-      }
+      segments: []
     };
   }
-
+  
+  console.log('📊 Analyzing path clearance...');
+  
   const segments = [];
   let totalDistance = 0;
   let clearCount = 0;
   let narrowCount = 0;
-  let minWidth = Infinity;
-
-  for (let i = 0; i < path.length - 1; i++) {
-    const start = path[i];
-    const end = path[i + 1];
-    const segmentDistance = distance(start, end);
-    const hasClearance = checkPathWidth(start, end, modules, habitatStructure);
+  let overallMinWidth = Infinity;
+  
+  for (let i = 0; i < pathPoints.length - 1; i++) {
+    const start = pathPoints[i];
+    const end = pathPoints[i + 1];
     
-    // For visualization, assume minimum width if clear
-    const segmentWidth = hasClearance ? MIN_PATH_WIDTH : MIN_PATH_WIDTH * 0.5;
-    if (segmentWidth < minWidth) {
-      minWidth = segmentWidth;
-    }
+    const dx = end.x - start.x;
+    const dz = end.z - start.z;
+    const segmentLength = Math.sqrt(dx * dx + dz * dz);
+    
+    const clearance = analyzeSegment(start, end, modules, habitatStructure);
     
     segments.push({
       start,
       end,
-      distance: segmentDistance,
-      passed: hasClearance,
-      clearance: segmentWidth
+      length: segmentLength,
+      clearance: clearance.minWidth,
+      passes: clearance.passes
     });
     
-    totalDistance += segmentDistance;
-    if (hasClearance) {
+    totalDistance += segmentLength;
+    overallMinWidth = Math.min(overallMinWidth, clearance.minWidth);
+    
+    if (clearance.passes) {
       clearCount++;
     } else {
       narrowCount++;
     }
   }
-
-  return {
+  
+  const result = {
     totalDistance,
     totalSegments: segments.length,
     clearSegments: clearCount,
     narrowSegments: narrowCount,
-    minWidth: minWidth === Infinity ? 0 : minWidth,
+    minWidth: overallMinWidth === Infinity ? 100 : overallMinWidth,
     passes: narrowCount === 0,
-    clearanceValidation: {
-      segments
-    }
+    segments
   };
-}
-
-// Generate path analysis report
-export function generatePathReport(analysis, startModule, endModule) {
-  const passRate = analysis.segments.length > 0 
-    ? (analysis.clearSegments / analysis.segments.length * 100).toFixed(1)
-    : 0;
-
-  return {
-    startModule: startModule?.name || 'Unknown',
-    endModule: endModule?.name || 'Unknown',
-    totalDistance: analysis.totalDistance.toFixed(2),
-    totalSegments: analysis.segments.length,
-    clearSegments: analysis.clearSegments,
-    obstructedSegments: analysis.obstructedSegments,
-    passRate,
-    isFullyClear: analysis.isFullyClear,
-    status: analysis.isFullyClear ? 'PASS' : 'FAIL',
-    minWidth: MIN_PATH_WIDTH,
-    recommendation: analysis.isFullyClear 
-      ? 'Path meets NASA minimum translation width requirements.'
-      : `Path has ${analysis.obstructedSegments} obstructed segment(s). Rearrange modules to provide ${MIN_PATH_WIDTH}m clear width.`
-  };
+  
+  console.log(`  ✓ Analysis complete:`);
+  console.log(`    Distance: ${totalDistance.toFixed(2)}m`);
+  console.log(`    Min width: ${result.minWidth.toFixed(2)}m`);
+  console.log(`    Status: ${result.passes ? 'PASS ✅' : 'FAIL ❌'}`);
+  
+  return result;
 }

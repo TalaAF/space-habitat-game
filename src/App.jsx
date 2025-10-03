@@ -93,6 +93,14 @@ const App = () => {
               <p>🖱️ Click two points on the habitat floor to analyze the crew path</p>
             </div>
           )}
+          {pathAnalysis && !pathAnalysis.passes && (
+            <div className="path-warning-message">
+              <span className="warning-icon">⚠️</span>
+              <span className="warning-text">
+                WARNING: Path violates NASA 1.0m minimum clearance requirement!
+              </span>
+            </div>
+          )}
         </div>
         <div className="control-panels">
           <PathAnalysisPanel 

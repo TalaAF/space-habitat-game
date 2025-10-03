@@ -249,12 +249,17 @@ const Scene = ({ habitatStructure, modules, onModulePositionUpdate, pathAnalysis
           new THREE.MeshBasicMaterial({ color: 0xffff00 })
         );
         marker.position.set(point.x, 0.1, point.z);
+        marker.userData.isPathMarker = true;
         sceneRef.current.add(marker);
 
         setClickPoints(prev => {
           const newPoints = [...prev, { x: point.x, z: point.z, marker }];
           
           if (newPoints.length === 2) {
+            // Hide the overlay instruction after second click
+            const overlay = document.querySelector('.path-overlay-info');
+            if (overlay) overlay.style.display = 'none';
+            
             calculatePath(newPoints[0], newPoints[1]);
             return [];
           }
@@ -314,54 +319,88 @@ const Scene = ({ habitatStructure, modules, onModulePositionUpdate, pathAnalysis
     }, 0);
   };
 
-  // Visualize path with color coding
+  // Visualize path with SEGMENTED TUBE approach
   const visualizePath = (pathPoints, analysis) => {
     if (!sceneRef.current) return;
 
-    const segments = analysis.clearanceValidation.segments;
+    const pathGroup = new THREE.Group();
+    let hasViolation = false;
 
-    // Draw segments
-    for (let i = 0; i < segments.length; i++) {
-      const segment = segments[i];
-      const start = new THREE.Vector3(segment.start.x, 0.3, segment.start.z);
-      const end = new THREE.Vector3(segment.end.x, 0.3, segment.end.z);
+    // Create individual tube segments with color coding
+    for (let i = 0; i < pathPoints.length - 1; i++) {
+      const start = pathPoints[i];
+      const end = pathPoints[i + 1];
+      const segmentData = analysis.segments[i];
 
-      const direction = new THREE.Vector3().subVectors(end, start);
-      const length = direction.length();
-      const center = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+      // Create curve for TubeGeometry
+      const curve = new THREE.LineCurve3(
+        new THREE.Vector3(start.x, 0.3, start.z),
+        new THREE.Vector3(end.x, 0.3, end.z)
+      );
 
-      const geometry = new THREE.CylinderGeometry(0.08, 0.08, length, 8);
-      const color = segment.passed ? 0x44ff44 : 0xff4444;
-      const material = new THREE.MeshBasicMaterial({ color });
-      const mesh = new THREE.Mesh(geometry, material);
+      // Create tube geometry
+      const tubeGeometry = new THREE.TubeGeometry(curve, 2, 0.08, 8, false);
+      
+      // Color based on clearance
+      const color = segmentData.passes ? 0x44ff44 : 0xff4444;
+      if (!segmentData.passes) hasViolation = true;
+      
+      const material = new THREE.MeshStandardMaterial({ 
+        color,
+        emissive: color,
+        emissiveIntensity: 0.2,
+        roughness: 0.5,
+        metalness: 0.3
+      });
 
-      mesh.position.copy(center);
-      mesh.lookAt(end);
-      mesh.rotateX(Math.PI / 2);
-
-      sceneRef.current.add(mesh);
-      pathVisualizationRef.current.push(mesh);
+      const tube = new THREE.Mesh(tubeGeometry, material);
+      pathGroup.add(tube);
     }
 
-    // Add distance label
+    sceneRef.current.add(pathGroup);
+    pathVisualizationRef.current.push(pathGroup);
+
+    // Add 3D text label for total distance
     const midpoint = pathPoints[Math.floor(pathPoints.length / 2)];
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
-    canvas.width = 256;
-    canvas.height = 64;
-    context.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    canvas.width = 512;
+    canvas.height = 128;
+    
+    // Background
+    context.fillStyle = 'rgba(0, 0, 0, 0.85)';
     context.fillRect(0, 0, canvas.width, canvas.height);
-    context.font = 'Bold 24px Arial';
+    
+    // Border
+    context.strokeStyle = analysis.passes ? '#44ff44' : '#ff4444';
+    context.lineWidth = 4;
+    context.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
+    
+    // Text
+    context.font = 'Bold 32px Arial';
     context.fillStyle = 'white';
     context.textAlign = 'center';
-    context.fillText(`${analysis.totalDistance.toFixed(2)}m`, 128, 40);
+    context.fillText(`Path: ${analysis.totalDistance.toFixed(2)}m`, 256, 50);
+    
+    context.font = '20px Arial';
+    context.fillStyle = analysis.passes ? '#44ff44' : '#ff4444';
+    context.fillText(
+      analysis.passes ? '✓ NASA Compliant' : '✗ Clearance Violation',
+      256,
+      85
+    );
 
     const texture = new THREE.CanvasTexture(canvas);
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture }));
-    sprite.position.set(midpoint.x, 2, midpoint.z);
-    sprite.scale.set(3, 0.75, 1);
+    sprite.position.set(midpoint.x, 2.5, midpoint.z);
+    sprite.scale.set(4, 1, 1);
     sceneRef.current.add(sprite);
     pathVisualizationRef.current.push(sprite);
+
+    // Add warning message if violations exist
+    if (hasViolation) {
+      console.warn('⚠️ WARNING: Path violates 1.0m minimum clearance requirement');
+    }
   };
 
   // Clear path visualization
@@ -391,8 +430,14 @@ const Scene = ({ habitatStructure, modules, onModulePositionUpdate, pathAnalysis
 
   // Clear visualization when exiting path analysis mode
   useEffect(() => {
+    const overlay = document.querySelector('.path-overlay-info');
+    
     if (!pathAnalysisMode) {
       clearPathVisualization();
+      if (overlay) overlay.style.display = 'none';
+    } else {
+      // Show overlay when entering path mode
+      if (overlay) overlay.style.display = 'block';
     }
   }, [pathAnalysisMode]);
 
@@ -408,7 +453,7 @@ const Scene = ({ habitatStructure, modules, onModulePositionUpdate, pathAnalysis
       {pathAnalysisMode && clickPoints.length === 1 && (
         <div style={{
           position: 'absolute',
-          bottom: '20px',
+          bottom: '80px',
           left: '50%',
           transform: 'translateX(-50%)',
           background: 'rgba(68, 200, 136, 0.9)',
