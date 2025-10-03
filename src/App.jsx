@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import HUD from './components/UI/HUD.jsx';
 import DesignPanel from './components/UI/DesignPanel.jsx';
+import ModuleBar from './components/UI/ModuleBar.jsx';
 import Scene from './components/Game/Scene.jsx';
 import Menu from './components/UI/Menu.jsx';
 import ValidationModal from './components/UI/ValidationModal.jsx';
+import MissionReportModal from './components/UI/MissionReportModal.jsx';
 import PathAnalysisPanel from './components/UI/PathAnalysisPanel.jsx';
 import { useGameState } from './hooks/useGameState.js';
 import { useHabitatDesign } from './hooks/useHabitatDesign.js';
-import { validateMissionLayout } from './utils/missionValidation.js';
+import { validateMissionLayout, analyzeMissionReadiness } from './utils/missionValidation.js';
 import './styles/index.css';
 
 const App = () => {
@@ -29,6 +31,7 @@ const App = () => {
   });
 
   const [validationResults, setValidationResults] = useState(null);
+  const [missionReport, setMissionReport] = useState(null);
   const [pathAnalysisMode, setPathAnalysisMode] = useState(false);
   const [pathAnalysis, setPathAnalysis] = useState(null);
   const [pathModules, setPathModules] = useState({ start: null, end: null });
@@ -53,12 +56,21 @@ const App = () => {
   };
 
   const handleValidate = () => {
+    // Use the new comprehensive Mission Readiness Analysis
+    const report = analyzeMissionReadiness(modules, habitatStructure, missionParams);
+    setMissionReport(report);
+    
+    // Keep old validation for backward compatibility if needed
     const results = validateMissionLayout(modules, habitatStructure, missionParams);
     setValidationResults(results);
   };
 
   const handleCloseValidation = () => {
     setValidationResults(null);
+  };
+
+  const handleCloseMissionReport = () => {
+    setMissionReport(null);
   };
 
   const handleTogglePathAnalysis = () => {
@@ -102,6 +114,10 @@ const App = () => {
               </span>
             </div>
           )}
+          <ModuleBar 
+            modules={modules}
+            onAddModule={handleAddModule}
+          />
         </div>
         <div className="control-panels">
           <PathAnalysisPanel 
@@ -115,12 +131,16 @@ const App = () => {
             missionParams={missionParams}
             onUpdateStructure={updateHabitatStructure}
             onUpdateMissionParams={handleUpdateMissionParams}
-            onAddModule={handleAddModule}
-            onRemoveModule={removeModule}
             onValidate={handleValidate}
           />
         </div>
       </div>
+      {missionReport && (
+        <MissionReportModal 
+          report={missionReport}
+          onClose={handleCloseMissionReport}
+        />
+      )}
       {validationResults && (
         <ValidationModal 
           results={validationResults}

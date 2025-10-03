@@ -5,43 +5,64 @@ export const MODULE_SPECS = {
     name: 'Living Quarters',
     mass: 2.5, // metric tons
     volume: 12, // cubic meters
-    category: 'crew'
+    category: 'crew',
+    power: -0.8, // kW consumption
+    lifeSupport: 0,
+    tags: ['private', 'quiet', 'clean']
   },
   lab: {
     name: 'Research Lab',
     mass: 3.2,
     volume: 15,
-    category: 'science'
+    category: 'science',
+    power: -2.5, // High power consumption for equipment
+    lifeSupport: 0,
+    tags: ['public', 'work', 'clean']
   },
   power: {
     name: 'Power Module',
     mass: 1.8,
     volume: 8,
-    category: 'essential'
+    category: 'essential',
+    power: 5.0, // kW generation (solar/nuclear)
+    lifeSupport: 0,
+    tags: ['utility', 'noisy']
   },
   greenhouse: {
     name: 'Greenhouse',
     mass: 2.0,
     volume: 20,
-    category: 'life-support'
+    category: 'life-support',
+    power: -1.2, // kW for lighting and climate
+    lifeSupport: 2, // Supports 2 crew with O2/food
+    tags: ['public', 'clean', 'humid']
   },
   storage: {
     name: 'Storage',
     mass: 1.5,
     volume: 10,
-    category: 'utility'
+    category: 'utility',
+    power: -0.3,
+    lifeSupport: 0,
+    tags: ['utility', 'clean']
   },
   medical: {
     name: 'Medical Bay',
     mass: 2.8,
     volume: 14,
-    category: 'essential'
+    category: 'essential',
+    power: -1.8,
+    lifeSupport: 0,
+    tags: ['private', 'clean', 'quiet']
   },
   airlock: {
     name: 'Airlock',
     mass: 1.2,
     volume: 6,
-    category: 'essential'
+    category: 'essential',
+    power: -0.5,
+    lifeSupport: 0,
+    tags: ['utility', 'dirty', 'noisy'] // Suitport area
   }
 };
 
@@ -340,4 +361,240 @@ export const validateMissionLayout = (modules, habitatStructure, missionParams) 
   results.totalChecks = results.checks.length;
 
   return results;
+};
+
+// ============================================================================
+// MISSION READINESS ANALYSIS ENGINE
+// Comprehensive engineering analysis based on NASA documents
+// ============================================================================
+
+export const analyzeMissionReadiness = (modules, habitatStructure, missionParams) => {
+  const { crewSize, destination, duration, constructionType } = missionParams;
+  const constructionMultiplier = CONSTRUCTION_MULTIPLIERS[constructionType] || CONSTRUCTION_MULTIPLIERS.rigid;
+  
+  const report = {
+    overall: {
+      status: 'pending', // 'ready', 'warning', 'critical'
+      readinessScore: 0
+    },
+    sections: {
+      massBudget: null,
+      powerAndLifeSupport: null,
+      habitationAndZoning: null
+    },
+    recommendations: []
+  };
+
+  // ========== A. MASS BUDGET CHECK ==========
+  const baseMass = modules.reduce((sum, module) => {
+    return sum + (MODULE_SPECS[module.type]?.mass || 0);
+  }, 0);
+  
+  const totalMass = baseMass * constructionMultiplier.mass;
+  const massLimit = MASS_LIMITS[destination];
+  const massUtilization = (totalMass / massLimit) * 100;
+  
+  report.sections.massBudget = {
+    passed: totalMass <= massLimit,
+    totalMass: totalMass.toFixed(2),
+    massLimit: massLimit.toFixed(2),
+    utilization: massUtilization.toFixed(1),
+    status: totalMass <= massLimit ? (massUtilization > 90 ? 'warning' : 'ready') : 'critical'
+  };
+
+  if (!report.sections.massBudget.passed) {
+    report.recommendations.push({
+      severity: 'critical',
+      message: `Mass budget exceeded by ${(totalMass - massLimit).toFixed(2)}t. Remove modules or switch to lighter construction type.`
+    });
+  } else if (massUtilization > 90) {
+    report.recommendations.push({
+      severity: 'warning',
+      message: `Mass utilization at ${massUtilization.toFixed(1)}%. Consider margin for safety.`
+    });
+  }
+
+  // ========== B. POWER & LIFE SUPPORT CHECK ==========
+  const totalPower = modules.reduce((sum, module) => {
+    return sum + (MODULE_SPECS[module.type]?.power || 0);
+  }, 0);
+
+  const totalLifeSupport = modules.reduce((sum, module) => {
+    return sum + (MODULE_SPECS[module.type]?.lifeSupport || 0);
+  }, 0);
+
+  const powerStatus = totalPower >= 0 ? 'surplus' : 'deficit';
+  const lifeSupportStatus = totalLifeSupport >= crewSize ? 'adequate' : 'insufficient';
+
+  report.sections.powerAndLifeSupport = {
+    power: {
+      passed: totalPower >= 0,
+      total: totalPower.toFixed(2),
+      status: powerStatus,
+      statusText: powerStatus === 'surplus' ? `+${totalPower.toFixed(2)} kW (Surplus)` : `${totalPower.toFixed(2)} kW (Deficit)`
+    },
+    lifeSupport: {
+      passed: totalLifeSupport >= crewSize,
+      capacity: totalLifeSupport,
+      required: crewSize,
+      status: lifeSupportStatus,
+      statusText: `${totalLifeSupport} / ${crewSize} Crew Supported`
+    }
+  };
+
+  if (totalPower < 0) {
+    report.recommendations.push({
+      severity: 'critical',
+      message: `Power deficit of ${Math.abs(totalPower).toFixed(2)} kW. Add more Power Modules or reduce power-hungry equipment.`
+    });
+  }
+
+  if (totalLifeSupport < crewSize) {
+    report.recommendations.push({
+      severity: 'critical',
+      message: `Life support insufficient. Add ${crewSize - totalLifeSupport} more Greenhouse modules to support crew.`
+    });
+  }
+
+  // ========== C. HABITATION & ZONING CHECK ==========
+  const zoningResults = {
+    completeness: { passed: true, issues: [] },
+    noiseSeparation: { passed: true, violations: [] },
+    hygieneSeparation: { passed: true, violations: [] },
+    privacy: { passed: true, issues: [] }
+  };
+
+  // C1. Completeness Check
+  const requirements = MISSION_REQUIREMENTS[destination][duration];
+  const essentialModules = requirements.essential || [];
+  
+  essentialModules.forEach(moduleType => {
+    const count = modules.filter(m => m.type === moduleType).length;
+    if (count === 0) {
+      zoningResults.completeness.passed = false;
+      zoningResults.completeness.issues.push(`Missing critical module: ${MODULE_SPECS[moduleType]?.name}`);
+    }
+  });
+
+  // Check crew quarters
+  const crewQuartersCount = modules.filter(m => m.type === 'living').length;
+  if (crewQuartersCount < crewSize) {
+    zoningResults.completeness.passed = false;
+    zoningResults.completeness.issues.push(`Need ${crewSize - crewQuartersCount} more Crew Quarters`);
+  }
+
+  // C2. Noise Separation Check
+  const noisyModules = modules.filter(m => MODULE_SPECS[m.type]?.tags?.includes('noisy'));
+  const quietModules = modules.filter(m => MODULE_SPECS[m.type]?.tags?.includes('quiet'));
+  
+  const MIN_NOISE_DISTANCE = 3.0; // meters
+  noisyModules.forEach(noisy => {
+    quietModules.forEach(quiet => {
+      const distance = calculateDistance(noisy.position, quiet.position);
+      if (distance < MIN_NOISE_DISTANCE) {
+        zoningResults.noiseSeparation.passed = false;
+        zoningResults.noiseSeparation.violations.push(
+          `${MODULE_SPECS[noisy.type].name} too close to ${MODULE_SPECS[quiet.type].name} (${distance.toFixed(1)}m < ${MIN_NOISE_DISTANCE}m)`
+        );
+      }
+    });
+  });
+
+  // C3. Hygiene Separation Check
+  const dirtyModules = modules.filter(m => MODULE_SPECS[m.type]?.tags?.includes('dirty'));
+  const cleanModules = modules.filter(m => MODULE_SPECS[m.type]?.tags?.includes('clean') && m.type !== 'living');
+  
+  const MIN_HYGIENE_DISTANCE = 2.5; // meters
+  dirtyModules.forEach(dirty => {
+    cleanModules.forEach(clean => {
+      const distance = calculateDistance(dirty.position, clean.position);
+      if (distance < MIN_HYGIENE_DISTANCE) {
+        zoningResults.hygieneSeparation.passed = false;
+        zoningResults.hygieneSeparation.violations.push(
+          `${MODULE_SPECS[dirty.type].name} too close to ${MODULE_SPECS[clean.type].name} (${distance.toFixed(1)}m)`
+        );
+      }
+    });
+  });
+
+  // C4. Privacy Check (simplified - checks if private modules are isolated)
+  const privateModules = modules.filter(m => MODULE_SPECS[m.type]?.tags?.includes('private'));
+  const publicModules = modules.filter(m => MODULE_SPECS[m.type]?.tags?.includes('public'));
+  
+  const MIN_PRIVACY_DISTANCE = 2.0; // meters
+  if (privateModules.length > 0 && publicModules.length > 1) {
+    privateModules.forEach(privateModule => {
+      const nearbyPublic = publicModules.filter(pub => {
+        const distance = calculateDistance(privateModule.position, pub.position);
+        return distance < MIN_PRIVACY_DISTANCE;
+      });
+      
+      if (nearbyPublic.length >= 2) {
+        zoningResults.privacy.passed = false;
+        zoningResults.privacy.issues.push(
+          `${MODULE_SPECS[privateModule.type].name} surrounded by high-traffic areas`
+        );
+      }
+    });
+  }
+
+  report.sections.habitationAndZoning = zoningResults;
+
+  // Add recommendations for zoning issues
+  if (!zoningResults.completeness.passed) {
+    zoningResults.completeness.issues.forEach(issue => {
+      report.recommendations.push({ severity: 'critical', message: issue });
+    });
+  }
+
+  if (!zoningResults.noiseSeparation.passed) {
+    zoningResults.noiseSeparation.violations.forEach(violation => {
+      report.recommendations.push({ severity: 'warning', message: `Noise Violation: ${violation}` });
+    });
+  }
+
+  if (!zoningResults.hygieneSeparation.passed) {
+    zoningResults.hygieneSeparation.violations.forEach(violation => {
+      report.recommendations.push({ severity: 'warning', message: `Hygiene Issue: ${violation}` });
+    });
+  }
+
+  if (!zoningResults.privacy.passed) {
+    zoningResults.privacy.issues.forEach(issue => {
+      report.recommendations.push({ severity: 'info', message: `Privacy Concern: ${issue}` });
+    });
+  }
+
+  // Calculate overall readiness score
+  let score = 0;
+  const checks = [
+    report.sections.massBudget.passed,
+    report.sections.powerAndLifeSupport.power.passed,
+    report.sections.powerAndLifeSupport.lifeSupport.passed,
+    zoningResults.completeness.passed,
+    zoningResults.noiseSeparation.passed,
+    zoningResults.hygieneSeparation.passed,
+    zoningResults.privacy.passed
+  ];
+  
+  score = (checks.filter(c => c).length / checks.length) * 100;
+  report.overall.readinessScore = Math.round(score);
+  
+  if (score === 100) {
+    report.overall.status = 'ready';
+  } else if (score >= 70) {
+    report.overall.status = 'warning';
+  } else {
+    report.overall.status = 'critical';
+  }
+
+  return report;
+};
+
+// Helper function to calculate distance between two positions
+const calculateDistance = (pos1, pos2) => {
+  const dx = pos1.x - pos2.x;
+  const dy = pos1.y - pos2.y;
+  const dz = pos1.z - pos2.z;
+  return Math.sqrt(dx * dx + dy * dy + dz * dz);
 };
