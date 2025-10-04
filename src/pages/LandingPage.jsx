@@ -613,7 +613,9 @@ const LandingPage = () => {
                   <div className="example-card-front">
                     <div className="example-image skylab-image">
                       <div className="example-label">1973-1974</div>
-                      <div className="example-title-overlay">Skylab</div>
+                      <div className="example-title-overlay">
+  <img src="public/skylab.jpeg" alt="Skylab" className="title-image" />
+</div>
                     </div>
                   </div>
                   <div className="example-card-back">
@@ -639,7 +641,7 @@ const LandingPage = () => {
                   <div className="example-card-front">
                     <div className="example-image iss-image">
                       <div className="example-label">1998-Present</div>
-                      <div className="example-title-overlay">International Space Station</div>
+                      <div className="example-title-overlay"><img src="public/iss.jpeg" alt="International Space Station" className="title-image" /></div>
                     </div>
                   </div>
                   <div className="example-card-back">
@@ -665,7 +667,7 @@ const LandingPage = () => {
                 <div className="example-card-front">
                   <div className="example-image iss-image">
                     <div className="example-label">2020s-Future</div>
-                    <div className="example-title-overlay">International Space Station</div>
+                    <div className="example-title-overlay"><img src="public/Lunar.jpeg" alt="Lunar Gateway" className="title-image" /></div>
                   </div>
                 </div>
                 <div className="example-card-back">
