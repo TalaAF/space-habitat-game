@@ -163,6 +163,7 @@ const DesignerPage = () => {
       {validationResults && (
         <ValidationModal 
           results={validationResults}
+          missionReport={missionReport}
           onClose={handleCloseValidation}
         />
       )}

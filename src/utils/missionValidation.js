@@ -2,103 +2,226 @@
 
 export const MODULE_SPECS = {
   living: {
-    name: 'Living Quarters',
+    name: 'Sleep Pod',
+    emoji: '🛏',
     mass: 2.5, // metric tons
     volume: 12, // cubic meters
     category: 'crew',
     power: -0.8, // kW consumption
     lifeSupport: 0,
-    tags: ['private', 'quiet', 'clean']
+    tags: ['private', 'quiet', 'clean'],
+    qualities: {
+      privacy: { required: true, description: 'Acoustic and visual separation from rest of habitat' },
+      lighting: { required: true, description: 'Adjustable circadian lighting for sleep cycle regulation' },
+      ventilation: { required: true, description: 'Personal ventilation to prevent CO2 buildup' },
+      storage: { required: true, description: 'Dedicated personal stowage space' }
+    },
+    adjacencyPrefs: {
+      avoid: ['exercise', 'workshop', 'galley'],
+      prefer: ['medical']
+    }
   },
   lab: {
-    name: 'Research Lab',
+    name: 'Laboratory',
+    emoji: '🔬',
     mass: 3.2,
     volume: 15,
     category: 'science',
     power: -2.5, // High power consumption for equipment
     lifeSupport: 0,
-    tags: ['public', 'work', 'clean']
+    tags: ['public', 'work', 'clean'],
+    qualities: {
+      versatility: { required: true, description: 'Durable workbench with multiple configurations' },
+      powerData: { required: true, description: 'Multiple power and data ports for equipment' },
+      lighting: { required: true, description: 'High-quality lighting for detailed work' },
+      containment: { required: true, description: 'Glovebox for handling experiments and preventing contamination' }
+    },
+    adjacencyPrefs: {
+      prefer: ['command', 'storage'],
+      avoid: ['exercise', 'workshop']
+    }
   },
   power: {
-    name: 'Power Module',
+    name: 'Power System',
+    emoji: '🔋',
     mass: 1.8,
     volume: 8,
     category: 'essential',
     power: 5.0, // kW generation (solar/nuclear)
     lifeSupport: 0,
-    tags: ['utility', 'noisy']
+    tags: ['utility', 'noisy'],
+    qualities: {
+      reliability: { required: true, description: 'Robust system with built-in redundancy' },
+      accessibility: { required: true, description: 'Components accessible for maintenance without EVA' },
+      batteryAccess: { required: true, description: 'Battery systems easily reachable for servicing' },
+      converterAccess: { required: true, description: 'Power converters accessible for repair' }
+    },
+    adjacencyPrefs: {
+      avoid: ['living', 'medical'],
+      prefer: ['workshop', 'storage']
+    }
   },
   greenhouse: {
     name: 'Greenhouse',
+    emoji: '🌱',
     mass: 2.0,
     volume: 20,
     category: 'life-support',
     power: -1.2, // kW for lighting and climate
     lifeSupport: 2, // Supports 2 crew with O2/food
-    tags: ['public', 'clean', 'humid']
-  },
-  storage: {
-    name: 'Storage',
-    mass: 1.5,
-    volume: 10,
-    category: 'utility',
-    power: -0.3,
-    lifeSupport: 0,
-    tags: ['utility', 'clean']
+    tags: ['public', 'clean', 'humid'],
+    qualities: {
+      lighting: { required: true, description: 'Full-spectrum lighting for plant growth' },
+      environmentControl: { required: true, description: 'Precise temperature and humidity control' },
+      atmosphereControl: { required: true, description: 'Controlled atmospheric composition' },
+      waterIntegration: { required: true, description: 'Integration with water recycling system' }
+    },
+    adjacencyPrefs: {
+      prefer: ['galley', 'storage'],
+      avoid: ['workshop', 'airlock']
+    }
   },
   medical: {
     name: 'Medical Bay',
+    emoji: '⚕',
     mass: 2.8,
     volume: 14,
     category: 'essential',
     power: -1.8,
     lifeSupport: 0,
-    tags: ['private', 'clean', 'quiet']
+    tags: ['private', 'clean', 'quiet'],
+    qualities: {
+      accessibility: { required: true, description: 'Easy transport access for injured crew members' },
+      sterility: { required: true, description: 'Surfaces easy to clean and sterilize' },
+      supplyAccess: { required: true, description: 'Medical supplies securely stowed but quickly accessible' },
+      diagnosticSpace: { required: true, description: 'Space for diagnostic equipment operation' }
+    },
+    adjacencyPrefs: {
+      prefer: ['living', 'command'],
+      avoid: ['workshop', 'airlock', 'exercise']
+    }
   },
   airlock: {
     name: 'Airlock',
+    emoji: '🚪',
     mass: 1.2,
     volume: 6,
     category: 'essential',
     power: -0.5,
     lifeSupport: 0,
-    tags: ['utility', 'dirty', 'noisy'] // Suitport area
+    tags: ['utility', 'dirty', 'noisy'],
+    qualities: {
+      volume: { required: true, description: 'Large enough for two fully suited astronauts' },
+      controls: { required: true, description: 'Clear, intuitive controls and interfaces' },
+      restraints: { required: true, description: 'Well-placed restraints and handholds' },
+      suitService: { required: true, description: 'Dedicated space for EVA suit servicing and checking' }
+    },
+    adjacencyPrefs: {
+      prefer: ['workshop', 'storage'],
+      avoid: ['living', 'medical', 'galley']
+    }
+  },
+  storage: {
+    name: 'Stowage',
+    emoji: '📦',
+    mass: 1.5,
+    volume: 10,
+    category: 'utility',
+    power: -0.3,
+    lifeSupport: 0,
+    tags: ['utility', 'clean'],
+    qualities: {
+      organization: { required: true, description: 'Labeled, dedicated compartments and racks' },
+      accessibility: { required: true, description: 'High-use items at waist-to-eye level (prime real estate)' },
+      longTermStorage: { required: true, description: 'Less accessible areas for long-term storage' },
+      avoidLooseBags: { required: true, description: 'Structured storage systems instead of loose bags' }
+    },
+    adjacencyPrefs: {
+      prefer: ['airlock', 'workshop', 'galley'],
+      neutral: ['lab', 'greenhouse']
+    }
   },
   galley: {
-    name: 'Galley',
+    name: 'Kitchen & Dining',
+    emoji: '🍽',
     mass: 2.2,
     volume: 12,
     category: 'crew',
     power: -1.5, // Heating, refrigeration, water
     lifeSupport: 0,
-    tags: ['public', 'noisy', 'humid']
+    tags: ['public', 'noisy', 'social'],
+    qualities: {
+      hygiene: { required: true, description: 'Surfaces easy to clean to prevent food contamination' },
+      preparation: { required: true, description: 'Dedicated areas for rehydrating and heating food' },
+      communalTable: { required: true, description: 'Social hub with communal table for meals and meetings' },
+      waterAccess: { required: true, description: 'Integration with water supply and waste systems' }
+    },
+    adjacencyPrefs: {
+      mustAdjoin: ['storage'], // Galley must be adjacent to storage (wardroom)
+      prefer: ['greenhouse'],
+      avoid: ['living', 'medical']
+    }
   },
   exercise: {
-    name: 'Exercise Module',
+    name: 'Fitness',
+    emoji: '🏋',
     mass: 1.8,
     volume: 10,
     category: 'crew',
     power: -0.6,
     lifeSupport: 0,
-    tags: ['public', 'noisy', 'clean']
+    tags: ['public', 'noisy', 'clean'],
+    qualities: {
+      vibrationIsolation: { required: true, description: 'Structural isolation to prevent interference with experiments' },
+      ventilation: { required: true, description: 'Enhanced ventilation for heat and CO2 from exercising crew' },
+      restraintSystems: { required: true, description: 'Proper restraint systems for microgravity exercise' },
+      equipmentSecuring: { required: true, description: 'Secure mounting for exercise equipment' }
+    },
+    adjacencyPrefs: {
+      avoid: ['living', 'medical', 'lab'],
+      prefer: ['workshop', 'storage']
+    }
   },
   command: {
-    name: 'Command Center',
+    name: 'Control Center',
+    emoji: '🖥',
     mass: 2.5,
     volume: 14,
     category: 'essential',
     power: -2.0, // Computers, communications
     lifeSupport: 0,
-    tags: ['public', 'work', 'clean']
+    tags: ['public', 'work', 'clean'],
+    qualities: {
+      ergonomics: { required: true, description: 'Controls reachable from restrained position' },
+      displayClarity: { required: true, description: 'Critical system displays clear and visible' },
+      collaboration: { required: true, description: 'Layout allows multiple crew members to collaborate' },
+      systemVisibility: { required: true, description: 'Line of sight to critical operations' }
+    },
+    adjacencyPrefs: {
+      prefer: ['lab', 'medical'],
+      sightLine: ['airlock'], // Should have sight line to airlock operations
+      avoid: ['exercise', 'workshop']
+    }
   },
   workshop: {
     name: 'Workshop',
+    emoji: '🔧',
     mass: 2.0,
     volume: 12,
     category: 'utility',
     power: -1.0, // Power tools
     lifeSupport: 0,
-    tags: ['utility', 'noisy', 'dirty']
+    tags: ['utility', 'noisy', 'dirty'],
+    qualities: {
+      containment: { required: true, description: 'Debris collection to prevent floating particles' },
+      workSurfaces: { required: true, description: 'Robust work surfaces and equipment restraints' },
+      ventilation: { required: true, description: 'Excellent ventilation for debris and fumes' },
+      powerData: { required: true, description: 'Ample power and data connections for tools' }
+    },
+    adjacencyPrefs: {
+      prefer: ['airlock', 'storage', 'power'],
+      avoid: ['living', 'medical', 'galley', 'lab']
+    }
   }
 };
 
@@ -416,9 +539,16 @@ export const analyzeMissionReadiness = (modules, habitatStructure, missionParams
     sections: {
       massBudget: null,
       powerAndLifeSupport: null,
-      habitationAndZoning: null
+      moduleQualities: null,
+      habitatLayout: null,
+      habitationAndZoning: null // Keep for backward compatibility
     },
-    recommendations: []
+    recommendations: [],
+    detailedIssues: {
+      critical: [],
+      warnings: [],
+      info: []
+    }
   };
 
   // ========== A. MASS BUDGET CHECK ==========
@@ -492,7 +622,15 @@ export const analyzeMissionReadiness = (modules, habitatStructure, missionParams
     });
   }
 
-  // ========== C. HABITATION & ZONING CHECK ==========
+  // ========== C. MODULE QUALITIES VALIDATION ==========
+  const moduleQualityResults = validateModuleQualities(modules, habitatStructure);
+  report.sections.moduleQualities = moduleQualityResults;
+
+  // ========== D. HABITAT LAYOUT VALIDATION ==========
+  const layoutResults = validateHabitatLayout(modules, habitatStructure);
+  report.sections.habitatLayout = layoutResults;
+
+  // ========== E. LEGACY HABITATION & ZONING CHECK (for backward compatibility) ==========
   const zoningResults = {
     completeness: { passed: true, issues: [] },
     noiseSeparation: { passed: true, violations: [] },
@@ -500,7 +638,7 @@ export const analyzeMissionReadiness = (modules, habitatStructure, missionParams
     privacy: { passed: true, issues: [] }
   };
 
-  // C1. Completeness Check
+  // E1. Completeness Check
   const requirements = MISSION_REQUIREMENTS[destination][duration];
   const essentialModules = requirements.essential || [];
   
@@ -519,106 +657,58 @@ export const analyzeMissionReadiness = (modules, habitatStructure, missionParams
     zoningResults.completeness.issues.push(`Need ${crewSize - crewQuartersCount} more Crew Quarters`);
   }
 
-  // C2. Noise Separation Check
-  const noisyModules = modules.filter(m => MODULE_SPECS[m.type]?.tags?.includes('noisy'));
-  const quietModules = modules.filter(m => MODULE_SPECS[m.type]?.tags?.includes('quiet'));
-  
-  const MIN_NOISE_DISTANCE = 3.0; // meters
-  noisyModules.forEach(noisy => {
-    quietModules.forEach(quiet => {
-      const distance = calculateDistance(noisy.position, quiet.position);
-      if (distance < MIN_NOISE_DISTANCE) {
-        zoningResults.noiseSeparation.passed = false;
-        zoningResults.noiseSeparation.violations.push(
-          `${MODULE_SPECS[noisy.type].name} too close to ${MODULE_SPECS[quiet.type].name} (${distance.toFixed(1)}m < ${MIN_NOISE_DISTANCE}m)`
-        );
-      }
-    });
-  });
-
-  // C3. Hygiene Separation Check
-  const dirtyModules = modules.filter(m => MODULE_SPECS[m.type]?.tags?.includes('dirty'));
-  const cleanModules = modules.filter(m => MODULE_SPECS[m.type]?.tags?.includes('clean') && m.type !== 'living');
-  
-  const MIN_HYGIENE_DISTANCE = 2.5; // meters
-  dirtyModules.forEach(dirty => {
-    cleanModules.forEach(clean => {
-      const distance = calculateDistance(dirty.position, clean.position);
-      if (distance < MIN_HYGIENE_DISTANCE) {
-        zoningResults.hygieneSeparation.passed = false;
-        zoningResults.hygieneSeparation.violations.push(
-          `${MODULE_SPECS[dirty.type].name} too close to ${MODULE_SPECS[clean.type].name} (${distance.toFixed(1)}m)`
-        );
-      }
-    });
-  });
-
-  // C4. Privacy Check (simplified - checks if private modules are isolated)
-  const privateModules = modules.filter(m => MODULE_SPECS[m.type]?.tags?.includes('private'));
-  const publicModules = modules.filter(m => MODULE_SPECS[m.type]?.tags?.includes('public'));
-  
-  const MIN_PRIVACY_DISTANCE = 2.0; // meters
-  if (privateModules.length > 0 && publicModules.length > 1) {
-    privateModules.forEach(privateModule => {
-      const nearbyPublic = publicModules.filter(pub => {
-        const distance = calculateDistance(privateModule.position, pub.position);
-        return distance < MIN_PRIVACY_DISTANCE;
-      });
-      
-      if (nearbyPublic.length >= 2) {
-        zoningResults.privacy.passed = false;
-        zoningResults.privacy.issues.push(
-          `${MODULE_SPECS[privateModule.type].name} surrounded by high-traffic areas`
-        );
-      }
-    });
-  }
-
   report.sections.habitationAndZoning = zoningResults;
 
-  // Add recommendations for zoning issues
-  if (!zoningResults.completeness.passed) {
-    zoningResults.completeness.issues.forEach(issue => {
-      report.recommendations.push({ severity: 'critical', message: issue });
-    });
-  }
-
-  if (!zoningResults.noiseSeparation.passed) {
-    zoningResults.noiseSeparation.violations.forEach(violation => {
-      report.recommendations.push({ severity: 'warning', message: `Noise Violation: ${violation}` });
-    });
-  }
-
-  if (!zoningResults.hygieneSeparation.passed) {
-    zoningResults.hygieneSeparation.violations.forEach(violation => {
-      report.recommendations.push({ severity: 'warning', message: `Hygiene Issue: ${violation}` });
-    });
-  }
-
-  if (!zoningResults.privacy.passed) {
-    zoningResults.privacy.issues.forEach(issue => {
-      report.recommendations.push({ severity: 'info', message: `Privacy Concern: ${issue}` });
-    });
-  }
-
-  // Calculate overall readiness score
-  let score = 0;
-  const checks = [
-    report.sections.massBudget.passed,
-    report.sections.powerAndLifeSupport.power.passed,
-    report.sections.powerAndLifeSupport.lifeSupport.passed,
-    zoningResults.completeness.passed,
-    zoningResults.noiseSeparation.passed,
-    zoningResults.hygieneSeparation.passed,
-    zoningResults.privacy.passed
+  // Collect all issues from new validation systems
+  report.detailedIssues.critical = [
+    ...moduleQualityResults.criticalIssues,
+    ...layoutResults.criticalIssues,
+    ...zoningResults.completeness.issues.filter(() => !zoningResults.completeness.passed)
   ];
-  
-  score = (checks.filter(c => c).length / checks.length) * 100;
+
+  report.detailedIssues.warnings = [
+    ...moduleQualityResults.warnings,
+    ...layoutResults.warnings
+  ];
+
+  // Add all issues to recommendations for backward compatibility
+  report.detailedIssues.critical.forEach(issue => {
+    report.recommendations.push({ severity: 'critical', message: issue });
+  });
+
+  report.detailedIssues.warnings.forEach(issue => {
+    report.recommendations.push({ severity: 'warning', message: issue });
+  });
+
+  // Calculate overall readiness score using weighted system
+  let score = 0;
+  const weights = {
+    massBudget: 0.20,           // 20% - Critical for mission feasibility
+    powerAndLifeSupport: 0.25,  // 25% - Essential for crew survival
+    moduleQualities: 0.30,      // 30% - Module functionality and safety
+    habitatLayout: 0.25         // 25% - Layout efficiency and crew wellbeing
+  };
+
+  // Calculate weighted score
+  const massBudgetScore = report.sections.massBudget.passed ? 100 : 0;
+  const powerScore = (report.sections.powerAndLifeSupport.power.passed ? 50 : 0) + 
+                     (report.sections.powerAndLifeSupport.lifeSupport.passed ? 50 : 0);
+  const qualityScore = moduleQualityResults.overall.score;
+  const layoutScore = layoutResults.overall.score;
+
+  score = (massBudgetScore * weights.massBudget) +
+          (powerScore * weights.powerAndLifeSupport) +
+          (qualityScore * weights.moduleQualities) +
+          (layoutScore * weights.habitatLayout);
+
   report.overall.readinessScore = Math.round(score);
   
-  if (score === 100) {
+  // Determine overall status based on critical issues and score
+  if (report.detailedIssues.critical.length > 0) {
+    report.overall.status = 'critical';
+  } else if (score >= 85) {
     report.overall.status = 'ready';
-  } else if (score >= 70) {
+  } else if (score >= 60) {
     report.overall.status = 'warning';
   } else {
     report.overall.status = 'critical';
@@ -627,8 +717,504 @@ export const analyzeMissionReadiness = (modules, habitatStructure, missionParams
   return report;
 };
 
+// ============================================================================
+// HABITAT LAYOUT PRINCIPLES
+// Based on NASA space habitat design guidelines
+// ============================================================================
+
+export const LAYOUT_PRINCIPLES = {
+  // Zoning: Separate incompatible activities
+  zoning: {
+    quietZone: ['living', 'medical'], // Private crew quarters and medical
+    noisyZone: ['galley', 'exercise', 'workshop'], // Noisy activities grouped together
+    cleanZone: ['galley', 'medical', 'living'], // Areas requiring cleanliness
+    dirtyZone: ['airlock', 'workshop'], // Potentially contaminating areas
+    workZone: ['lab', 'command', 'workshop'], // Work-focused areas
+    socialZone: ['galley'] // Community gathering areas
+  },
+  
+  // Adjacency: Modules that must/should be next to each other
+  adjacency: {
+    required: [
+      ['galley', 'storage'], // Kitchen must be adjacent to dining/storage
+    ],
+    preferred: [
+      ['airlock', 'workshop'], // EVA prep near maintenance area
+      ['airlock', 'storage'], // EVA equipment access
+      ['command', 'lab'], // Operations oversight
+      ['greenhouse', 'galley'], // Food production near preparation
+      ['medical', 'living'], // Medical access to crew quarters
+    ],
+    avoided: [
+      ['exercise', 'living'], // Noise/vibration issues
+      ['exercise', 'medical'], // Noise/vibration issues
+      ['exercise', 'lab'], // Vibration interferes with experiments
+      ['workshop', 'medical'], // Contamination concerns
+      ['workshop', 'galley'], // Debris contamination
+      ['airlock', 'galley'], // Dust contamination from EVA
+    ]
+  },
+  
+  // Distance requirements (in meters)
+  distances: {
+    noiseSeparation: 3.0, // Noisy modules from quiet modules
+    contamination: 2.5, // Dirty modules from clean modules
+    privacy: 2.0, // Private modules from high-traffic areas
+    emergency: 8.0, // Maximum distance for emergency access
+    collaboration: 4.0 // Maximum distance for frequent collaboration
+  },
+  
+  // Translation paths: Emergency and daily movement
+  translationPaths: {
+    minWidth: 1.2, // Minimum corridor width (meters)
+    emergencyAccess: 8.0, // Maximum distance to critical modules
+    centralHub: true, // Should have central gathering area
+    deadEnds: 'minimize' // Avoid dead-end configurations
+  }
+};
+
+// ============================================================================
+// ENHANCED MODULE QUALITY VALIDATION
+// Detailed checks for each module's specific requirements
+// ============================================================================
+
+export const validateModuleQualities = (modules, habitatStructure) => {
+  const qualityResults = {
+    overall: { passed: true, score: 100 },
+    moduleChecks: {},
+    criticalIssues: [],
+    warnings: [],
+    recommendations: []
+  };
+
+  let totalChecks = 0;
+  let passedChecks = 0;
+
+  modules.forEach(module => {
+    const moduleSpec = MODULE_SPECS[module.type];
+    if (!moduleSpec || !moduleSpec.qualities) return;
+
+    const moduleResult = {
+      passed: true,
+      qualities: {},
+      issues: []
+    };
+
+    // Check each quality requirement for this module
+    Object.entries(moduleSpec.qualities).forEach(([qualityName, qualitySpec]) => {
+      totalChecks++;
+      
+      const qualityCheck = validateSpecificQuality(module, qualityName, qualitySpec, modules, habitatStructure);
+      moduleResult.qualities[qualityName] = qualityCheck;
+      
+      if (qualityCheck.passed) {
+        passedChecks++;
+      } else {
+        moduleResult.passed = false;
+        moduleResult.issues.push(qualityCheck.issue);
+        
+        if (qualityCheck.severity === 'critical') {
+          qualityResults.criticalIssues.push(`${moduleSpec.name}: ${qualityCheck.issue}`);
+        } else {
+          qualityResults.warnings.push(`${moduleSpec.name}: ${qualityCheck.issue}`);
+        }
+      }
+    });
+
+    qualityResults.moduleChecks[module.id || module.type] = moduleResult;
+  });
+
+  qualityResults.overall.passed = qualityResults.criticalIssues.length === 0;
+  qualityResults.overall.score = totalChecks > 0 ? Math.round((passedChecks / totalChecks) * 100) : 100;
+
+  return qualityResults;
+};
+
+const validateSpecificQuality = (module, qualityName, qualitySpec, allModules, habitatStructure) => {
+  const moduleSpec = MODULE_SPECS[module.type];
+  
+  // Default quality check - most qualities require specific implementation
+  const baseCheck = {
+    passed: true,
+    issue: '',
+    severity: 'warning',
+    description: qualitySpec.description
+  };
+
+  // Module-specific quality validations
+  switch (module.type) {
+    case 'living':
+      return validateLivingQualities(module, qualityName, qualitySpec, allModules);
+    case 'lab':
+      return validateLabQualities(module, qualityName, qualitySpec, allModules);
+    case 'power':
+      return validatePowerQualities(module, qualityName, qualitySpec, allModules);
+    case 'greenhouse':
+      return validateGreenhouseQualities(module, qualityName, qualitySpec, allModules);
+    case 'medical':
+      return validateMedicalQualities(module, qualityName, qualitySpec, allModules);
+    case 'airlock':
+      return validateAirlockQualities(module, qualityName, qualitySpec, allModules);
+    case 'storage':
+      return validateStorageQualities(module, qualityName, qualitySpec, allModules);
+    case 'galley':
+      return validateGalleyQualities(module, qualityName, qualitySpec, allModules);
+    case 'exercise':
+      return validateExerciseQualities(module, qualityName, qualitySpec, allModules);
+    case 'command':
+      return validateCommandQualities(module, qualityName, qualitySpec, allModules);
+    case 'workshop':
+      return validateWorkshopQualities(module, qualityName, qualitySpec, allModules);
+    default:
+      return baseCheck;
+  }
+};
+
+// Specific quality validation functions for each module type
+const validateLivingQualities = (module, qualityName, qualitySpec, allModules) => {
+  switch (qualityName) {
+    case 'privacy':
+      const nearbyNoisyModules = allModules.filter(m => 
+        m.id !== module.id && 
+        MODULE_SPECS[m.type]?.tags?.includes('noisy') &&
+        calculateDistance(module.position, m.position) < LAYOUT_PRINCIPLES.distances.privacy
+      );
+      return {
+        passed: nearbyNoisyModules.length === 0,
+        issue: nearbyNoisyModules.length > 0 ? 
+          `Privacy compromised by nearby noisy modules: ${nearbyNoisyModules.map(m => MODULE_SPECS[m.type].name).join(', ')}` : '',
+        severity: 'critical',
+        description: qualitySpec.description
+      };
+    
+    case 'ventilation':
+      // Check if living module is not surrounded by other modules (needs air circulation)
+      const surroundingModules = allModules.filter(m => 
+        m.id !== module.id && 
+        calculateDistance(module.position, m.position) < 2.0
+      );
+      return {
+        passed: surroundingModules.length < 4, // Not completely surrounded
+        issue: surroundingModules.length >= 4 ? 
+          'Living quarters completely surrounded - inadequate ventilation circulation' : '',
+        severity: 'warning',
+        description: qualitySpec.description
+      };
+    
+    default:
+      return { passed: true, issue: '', severity: 'info', description: qualitySpec.description };
+  }
+};
+
+const validateLabQualities = (module, qualityName, qualitySpec, allModules) => {
+  switch (qualityName) {
+    case 'containment':
+      const nearbyDirtyModules = allModules.filter(m =>
+        m.id !== module.id &&
+        MODULE_SPECS[m.type]?.tags?.includes('dirty') &&
+        calculateDistance(module.position, m.position) < LAYOUT_PRINCIPLES.distances.contamination
+      );
+      return {
+        passed: nearbyDirtyModules.length === 0,
+        issue: nearbyDirtyModules.length > 0 ?
+          `Lab contamination risk from nearby dirty modules: ${nearbyDirtyModules.map(m => MODULE_SPECS[m.type].name).join(', ')}` : '',
+        severity: 'critical',
+        description: qualitySpec.description
+      };
+    
+    default:
+      return { passed: true, issue: '', severity: 'info', description: qualitySpec.description };
+  }
+};
+
+const validateExerciseQualities = (module, qualityName, qualitySpec, allModules) => {
+  switch (qualityName) {
+    case 'vibrationIsolation':
+      const sensitiveDist = LAYOUT_PRINCIPLES.distances.noiseSeparation;
+      const nearbyLabModules = allModules.filter(m =>
+        m.id !== module.id &&
+        m.type === 'lab' &&
+        calculateDistance(module.position, m.position) < sensitiveDist
+      );
+      
+      const nearbyLivingModules = allModules.filter(m =>
+        m.id !== module.id &&
+        m.type === 'living' &&
+        calculateDistance(module.position, m.position) < sensitiveDist
+      );
+      
+      const affectedModules = [...nearbyLabModules, ...nearbyLivingModules];
+      
+      return {
+        passed: affectedModules.length === 0,
+        issue: affectedModules.length > 0 ?
+          `Exercise vibrations will interfere with: ${affectedModules.map(m => MODULE_SPECS[m.type].name).join(', ')}` : '',
+        severity: 'critical',
+        description: qualitySpec.description
+      };
+    
+    default:
+      return { passed: true, issue: '', severity: 'info', description: qualitySpec.description };
+  }
+};
+
+const validateAirlockQualities = (module, qualityName, qualitySpec, allModules) => {
+  switch (qualityName) {
+    case 'suitService':
+      const nearbyWorkshop = allModules.find(m =>
+        m.type === 'workshop' &&
+        calculateDistance(module.position, m.position) < LAYOUT_PRINCIPLES.distances.collaboration
+      );
+      
+      const nearbyStorage = allModules.find(m =>
+        m.type === 'storage' &&
+        calculateDistance(module.position, m.position) < LAYOUT_PRINCIPLES.distances.collaboration
+      );
+      
+      return {
+        passed: nearbyWorkshop && nearbyStorage,
+        issue: !nearbyWorkshop || !nearbyStorage ?
+          `Airlock needs nearby Workshop and Storage for EVA suit servicing` : '',
+        severity: 'warning',
+        description: qualitySpec.description
+      };
+    
+    default:
+      return { passed: true, issue: '', severity: 'info', description: qualitySpec.description };
+  }
+};
+
+const validateGalleyQualities = (module, qualityName, qualitySpec, allModules) => {
+  switch (qualityName) {
+    case 'communalTable':
+      const adjacentStorage = allModules.find(m =>
+        m.type === 'storage' &&
+        calculateDistance(module.position, m.position) < 2.0 // Must be adjacent
+      );
+      
+      return {
+        passed: !!adjacentStorage,
+        issue: !adjacentStorage ?
+          'Galley must be adjacent to Storage to create functional wardroom/dining area' : '',
+        severity: 'critical',
+        description: qualitySpec.description
+      };
+    
+    default:
+      return { passed: true, issue: '', severity: 'info', description: qualitySpec.description };
+  }
+};
+
+// Add default implementations for other module types
+const validatePowerQualities = (module, qualityName, qualitySpec) => 
+  ({ passed: true, issue: '', severity: 'info', description: qualitySpec.description });
+
+const validateGreenhouseQualities = (module, qualityName, qualitySpec) => 
+  ({ passed: true, issue: '', severity: 'info', description: qualitySpec.description });
+
+const validateMedicalQualities = (module, qualityName, qualitySpec) => 
+  ({ passed: true, issue: '', severity: 'info', description: qualitySpec.description });
+
+const validateStorageQualities = (module, qualityName, qualitySpec) => 
+  ({ passed: true, issue: '', severity: 'info', description: qualitySpec.description });
+
+const validateCommandQualities = (module, qualityName, qualitySpec) => 
+  ({ passed: true, issue: '', severity: 'info', description: qualitySpec.description });
+
+const validateWorkshopQualities = (module, qualityName, qualitySpec) => 
+  ({ passed: true, issue: '', severity: 'info', description: qualitySpec.description });
+
+// ============================================================================
+// HABITAT LAYOUT VALIDATION
+// Checks zoning, adjacency, and translation path requirements
+// ============================================================================
+
+export const validateHabitatLayout = (modules, habitatStructure) => {
+  const layoutResults = {
+    overall: { passed: true, score: 100 },
+    zoning: validateZoning(modules),
+    adjacency: validateAdjacency(modules),
+    translationPaths: validateTranslationPaths(modules, habitatStructure),
+    criticalIssues: [],
+    warnings: [],
+    recommendations: []
+  };
+
+  // Collect issues from all validation areas
+  const allChecks = [
+    ...Object.values(layoutResults.zoning),
+    ...Object.values(layoutResults.adjacency),
+    ...Object.values(layoutResults.translationPaths)
+  ];
+
+  allChecks.forEach(check => {
+    if (!check.passed) {
+      if (check.severity === 'critical') {
+        layoutResults.criticalIssues.push(check.issue);
+      } else {
+        layoutResults.warnings.push(check.issue);
+      }
+    }
+  });
+
+  layoutResults.overall.passed = layoutResults.criticalIssues.length === 0;
+  
+  const totalChecks = allChecks.length;
+  const passedChecks = allChecks.filter(c => c.passed).length;
+  layoutResults.overall.score = totalChecks > 0 ? Math.round((passedChecks / totalChecks) * 100) : 100;
+
+  return layoutResults;
+};
+
+const validateZoning = (modules) => {
+  const results = {
+    noiseSeparation: { passed: true, issues: [] },
+    contaminationControl: { passed: true, issues: [] },
+    privacyProtection: { passed: true, issues: [] }
+  };
+
+  // Check noise separation
+  const quietModules = modules.filter(m => LAYOUT_PRINCIPLES.zoning.quietZone.includes(m.type));
+  const noisyModules = modules.filter(m => LAYOUT_PRINCIPLES.zoning.noisyZone.includes(m.type));
+
+  quietModules.forEach(quiet => {
+    noisyModules.forEach(noisy => {
+      const distance = calculateDistance(quiet.position, noisy.position);
+      if (distance < LAYOUT_PRINCIPLES.distances.noiseSeparation) {
+        results.noiseSeparation.passed = false;
+        results.noiseSeparation.issues.push({
+          issue: `${MODULE_SPECS[noisy.type].name} too close to ${MODULE_SPECS[quiet.type].name} (${distance.toFixed(1)}m < ${LAYOUT_PRINCIPLES.distances.noiseSeparation}m)`,
+          severity: 'warning'
+        });
+      }
+    });
+  });
+
+  // Check contamination control
+  const cleanModules = modules.filter(m => LAYOUT_PRINCIPLES.zoning.cleanZone.includes(m.type));
+  const dirtyModules = modules.filter(m => LAYOUT_PRINCIPLES.zoning.dirtyZone.includes(m.type));
+
+  cleanModules.forEach(clean => {
+    dirtyModules.forEach(dirty => {
+      const distance = calculateDistance(clean.position, dirty.position);
+      if (distance < LAYOUT_PRINCIPLES.distances.contamination) {
+        results.contaminationControl.passed = false;
+        results.contaminationControl.issues.push({
+          issue: `${MODULE_SPECS[dirty.type].name} contamination risk to ${MODULE_SPECS[clean.type].name} (${distance.toFixed(1)}m)`,
+          severity: 'critical'
+        });
+      }
+    });
+  });
+
+  return results;
+};
+
+const validateAdjacency = (modules) => {
+  const results = {
+    requiredAdjacencies: { passed: true, issues: [] },
+    preferredAdjacencies: { passed: true, issues: [] },
+    avoidedAdjacencies: { passed: true, issues: [] }
+  };
+
+  // Check required adjacencies
+  LAYOUT_PRINCIPLES.adjacency.required.forEach(([type1, type2]) => {
+    const modules1 = modules.filter(m => m.type === type1);
+    const modules2 = modules.filter(m => m.type === type2);
+
+    if (modules1.length > 0 && modules2.length > 0) {
+      let foundAdjacent = false;
+      modules1.forEach(m1 => {
+        modules2.forEach(m2 => {
+          if (calculateDistance(m1.position, m2.position) < 2.0) {
+            foundAdjacent = true;
+          }
+        });
+      });
+
+      if (!foundAdjacent) {
+        results.requiredAdjacencies.passed = false;
+        results.requiredAdjacencies.issues.push({
+          issue: `${MODULE_SPECS[type1].name} must be adjacent to ${MODULE_SPECS[type2].name}`,
+          severity: 'critical'
+        });
+      }
+    }
+  });
+
+  // Check avoided adjacencies
+  LAYOUT_PRINCIPLES.adjacency.avoided.forEach(([type1, type2]) => {
+    const modules1 = modules.filter(m => m.type === type1);
+    const modules2 = modules.filter(m => m.type === type2);
+
+    modules1.forEach(m1 => {
+      modules2.forEach(m2 => {
+        const distance = calculateDistance(m1.position, m2.position);
+        if (distance < 2.0) {
+          results.avoidedAdjacencies.passed = false;
+          results.avoidedAdjacencies.issues.push({
+            issue: `${MODULE_SPECS[type1].name} should not be adjacent to ${MODULE_SPECS[type2].name}`,
+            severity: 'warning'
+          });
+        }
+      });
+    });
+  });
+
+  return results;
+};
+
+const validateTranslationPaths = (modules, habitatStructure) => {
+  const results = {
+    emergencyAccess: { passed: true, issues: [] },
+    centralHub: { passed: true, issues: [] },
+    pathClearance: { passed: true, issues: [] }
+  };
+
+  // Check emergency access - critical modules should be within emergency distance
+  const criticalModules = modules.filter(m => MODULE_SPECS[m.type].category === 'essential');
+  const livingModules = modules.filter(m => m.type === 'living');
+
+  criticalModules.forEach(critical => {
+    let hasNearbyAccess = false;
+    livingModules.forEach(living => {
+      if (calculateDistance(critical.position, living.position) <= LAYOUT_PRINCIPLES.distances.emergency) {
+        hasNearbyAccess = true;
+      }
+    });
+
+    if (!hasNearbyAccess) {
+      results.emergencyAccess.passed = false;
+      results.emergencyAccess.issues.push({
+        issue: `${MODULE_SPECS[critical.type].name} too far from crew quarters for emergency access`,
+        severity: 'critical'
+      });
+    }
+  });
+
+  // Check for central gathering area (galley should be reasonably central)
+  const galleyModules = modules.filter(m => m.type === 'galley');
+  if (galleyModules.length > 0) {
+    const galley = galleyModules[0];
+    const averageDistanceToGalley = modules
+      .filter(m => m.id !== galley.id)
+      .reduce((sum, m) => sum + calculateDistance(galley.position, m.position), 0) / (modules.length - 1);
+
+    if (averageDistanceToGalley > 6.0) {
+      results.centralHub.passed = false;
+      results.centralHub.issues.push({
+        issue: 'Galley (social hub) is not centrally located for easy crew access',
+        severity: 'warning'
+      });
+    }
+  }
+
+  return results;
+};
+
 // Helper function to calculate distance between two positions
 const calculateDistance = (pos1, pos2) => {
+  if (!pos1 || !pos2) return Infinity;
   const dx = pos1.x - pos2.x;
   const dy = pos1.y - pos2.y;
   const dz = pos1.z - pos2.z;
