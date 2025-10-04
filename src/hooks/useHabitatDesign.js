@@ -2,27 +2,60 @@ import { useState } from 'react';
 
 export const useHabitatDesign = () => {
   const [habitatStructure, setHabitatStructure] = useState({
-    shape: 'cylinder', // 'cylinder' or 'dome'
+    shape: 'cylinder', // 'cylinder' or 'dome' (legacy - for overall shape)
     radius: 5,
     height: 8,
+    floors: 1, // Number of floors
+    floorHeight: 3, // Height per floor in meters
+    floorShapes: ['cylinder'] // Array of shapes for each floor
   });
+
+  const [currentFloor, setCurrentFloor] = useState(0);
+
+  // Helper to update floor shapes array when floors count changes
+  const updateFloorShapes = (numFloors, currentShapes) => {
+    const newShapes = [...currentShapes];
+    while (newShapes.length < numFloors) {
+      newShapes.push('cylinder'); // Default new floors to cylinder
+    }
+    return newShapes.slice(0, numFloors); // Trim if reduced
+  };
 
   const [modules, setModules] = useState([]);
 
   const updateHabitatStructure = (updates) => {
-    setHabitatStructure(prev => ({
-      ...prev,
-      ...updates
-    }));
+    setHabitatStructure(prev => {
+      const newStructure = { ...prev, ...updates };
+      
+      // If floors count changed, update floorShapes array
+      if (updates.floors !== undefined && updates.floors !== prev.floors) {
+        newStructure.floorShapes = updateFloorShapes(updates.floors, prev.floorShapes);
+      }
+      
+      return newStructure;
+    });
+  };
+
+  const updateFloorShape = (floorIndex, shape) => {
+    setHabitatStructure(prev => {
+      const newShapes = [...prev.floorShapes];
+      newShapes[floorIndex] = shape;
+      return {
+        ...prev,
+        floorShapes: newShapes
+      };
+    });
   };
 
   const addModule = (moduleType) => {
+    const floorY = currentFloor * habitatStructure.floorHeight + 0.5;
     const newModule = {
       id: Date.now(),
       type: moduleType,
-      position: { x: 0, y: 0.5, z: 0 },
+      position: { x: 0, y: floorY, z: 0 },
       rotation: { x: 0, y: 0, z: 0 },
       scale: 1,
+      floor: currentFloor, // Track which floor this module is on
     };
     console.log('Creating module in useHabitatDesign:', newModule);
     setModules(prev => {
@@ -34,6 +67,14 @@ export const useHabitatDesign = () => {
   };
 
   const updateModulePosition = (moduleId, position) => {
+    // If position is null, delete the module
+    if (position === null) {
+      setModules(prev => prev.filter(module => module.id !== moduleId));
+      console.log('Module deleted:', moduleId);
+      return;
+    }
+    
+    // Otherwise, update the position
     setModules(prev => prev.map(module => 
       module.id === moduleId 
         ? { ...module, position }
@@ -67,7 +108,10 @@ export const useHabitatDesign = () => {
   return {
     habitatStructure,
     modules,
+    currentFloor,
+    setCurrentFloor,
     updateHabitatStructure,
+    updateFloorShape,
     addModule,
     updateModulePosition,
     removeModule,

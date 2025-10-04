@@ -1,7 +1,7 @@
 import React from 'react';
 
 const HabitatShapeSelector = ({ habitatStructure, onUpdateStructure }) => {
-  const { shape, radius, height } = habitatStructure;
+  const { shape, radius, height, floors, floorHeight } = habitatStructure;
 
   const handleShapeChange = (newShape) => {
     onUpdateStructure({ shape: newShape });
@@ -13,6 +13,18 @@ const HabitatShapeSelector = ({ habitatStructure, onUpdateStructure }) => {
 
   const handleHeightChange = (e) => {
     onUpdateStructure({ height: parseFloat(e.target.value) });
+  };
+
+  const handleFloorsChange = (e) => {
+    const newFloors = parseInt(e.target.value);
+    const newHeight = newFloors * floorHeight;
+    onUpdateStructure({ floors: newFloors, height: newHeight });
+  };
+
+  const handleFloorHeightChange = (e) => {
+    const newFloorHeight = parseFloat(e.target.value);
+    const newHeight = floors * newFloorHeight;
+    onUpdateStructure({ floorHeight: newFloorHeight, height: newHeight });
   };
 
   return (
@@ -54,16 +66,40 @@ const HabitatShapeSelector = ({ habitatStructure, onUpdateStructure }) => {
 
         <div className="control-group">
           <label>
-            <span>Height: {height.toFixed(1)}m</span>
+            <span>Number of Floors: {floors}</span>
             <input
               type="range"
-              min="4"
-              max="20"
-              step="0.5"
-              value={height}
-              onChange={handleHeightChange}
+              min="1"
+              max="5"
+              step="1"
+              value={floors}
+              onChange={handleFloorsChange}
               className="slider"
             />
+          </label>
+        </div>
+
+        <div className="control-group">
+          <label>
+            <span>Floor Height: {floorHeight.toFixed(1)}m</span>
+            <input
+              type="range"
+              min="2.5"
+              max="5"
+              step="0.5"
+              value={floorHeight}
+              onChange={handleFloorHeightChange}
+              className="slider"
+            />
+          </label>
+        </div>
+
+        <div className="control-group">
+          <label>
+            <span>Total Height: {height.toFixed(1)}m</span>
+            <div className="info-text" style={{fontSize: '0.85rem', color: '#888', marginTop: '4px'}}>
+              ({floors} floors × {floorHeight.toFixed(1)}m each)
+            </div>
           </label>
         </div>
       </div>

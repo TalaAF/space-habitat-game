@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import HUD from './components/UI/HUD.jsx';
 import DesignPanel from './components/UI/DesignPanel.jsx';
 import ModuleBar from './components/UI/ModuleBar.jsx';
+import FloorSelector from './components/UI/FloorSelector.jsx';
 import Scene from './components/Game/Scene.jsx';
 import Menu from './components/UI/Menu.jsx';
 import ValidationModal from './components/UI/ValidationModal.jsx';
 import MissionReportModal from './components/UI/MissionReportModal.jsx';
 import PathAnalysisPanel from './components/UI/PathAnalysisPanel.jsx';
+import ExportMenu from './components/UI/ExportMenu.jsx';
 import { useGameState } from './hooks/useGameState.js';
 import { useHabitatDesign } from './hooks/useHabitatDesign.js';
 import { validateMissionLayout, analyzeMissionReadiness } from './utils/missionValidation.js';
@@ -16,8 +18,11 @@ const App = () => {
   const { gameState, startGame, endGame, updateScore } = useGameState();
   const { 
     habitatStructure, 
-    modules, 
-    updateHabitatStructure, 
+    modules,
+    currentFloor,
+    setCurrentFloor,
+    updateHabitatStructure,
+    updateFloorShape,
     addModule,
     updateModulePosition,
     removeModule 
@@ -35,6 +40,9 @@ const App = () => {
   const [pathAnalysisMode, setPathAnalysisMode] = useState(false);
   const [pathAnalysis, setPathAnalysis] = useState(null);
   const [pathModules, setPathModules] = useState({ start: null, end: null });
+  const [isModuleSelected, setIsModuleSelected] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const sceneRef = useRef(null);
 
   if (!gameState.isRunning) {
     return <Menu onStart={startGame} />;
@@ -88,18 +96,21 @@ const App = () => {
   return (
     <div className="app">
       <HUD 
-        score={gameState.score} 
         moduleCount={modules.length}
         onEndGame={endGame}
+        onExport={() => setExportMenuOpen(true)}
       />
       <div className="game-container">
         <div className="scene-wrapper">
           <Scene 
+            ref={sceneRef}
             habitatStructure={habitatStructure}
             modules={modules}
+            currentFloor={currentFloor}
             onModulePositionUpdate={updateModulePosition}
             pathAnalysisMode={pathAnalysisMode}
             onPathAnalysis={handlePathAnalysisComplete}
+            onModuleSelected={setIsModuleSelected}
           />
           {pathAnalysisMode && (
             <div className="path-overlay-info">
@@ -114,6 +125,14 @@ const App = () => {
               </span>
             </div>
           )}
+          <FloorSelector 
+            currentFloor={currentFloor}
+            totalFloors={habitatStructure.floors}
+            floorShapes={habitatStructure.floorShapes}
+            onFloorChange={setCurrentFloor}
+            onFloorShapeChange={updateFloorShape}
+            isHidden={isModuleSelected}
+          />
           <ModuleBar 
             modules={modules}
             onAddModule={handleAddModule}
@@ -147,6 +166,13 @@ const App = () => {
           onClose={handleCloseValidation}
         />
       )}
+      <ExportMenu
+        habitatStructure={habitatStructure}
+        modules={modules}
+        sceneRef={sceneRef}
+        isOpen={exportMenuOpen}
+        onClose={() => setExportMenuOpen(false)}
+      />
     </div>
   );
 };

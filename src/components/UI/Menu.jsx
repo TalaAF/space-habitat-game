@@ -17,7 +17,6 @@ const Menu = ({ onStart }) => {
             <li>Select modules from the builder panel</li>
             <li>Add them to create your space habitat</li>
             <li>Watch your station grow in 3D</li>
-            <li>Score points for each module added</li>
           </ul>
         </div>
       </div>
