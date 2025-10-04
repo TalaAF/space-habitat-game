@@ -13,12 +13,13 @@ html, body {
 
 .landing-page {
   width: 100%;
-  min-height: 500vh; /* Force scroll - 5 sections */
+  min-height: 600vh; /* Extended for epic journey - 6 sections */
   position: relative;
   overflow-x: hidden;
   overflow-y: visible;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #ffffff;
+  background: #000000; /* Pure black for space */
 }
 
 /* Fixed 3D Canvas Background */
@@ -67,10 +68,40 @@ html, body {
   background-clip: text;
 }
 
+/* Mission Badge */
+.mission-badge,
+.landing-sequence-badge {
+  display: inline-block;
+  padding: 10px 25px;
+  margin-bottom: 30px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: rgba(77, 127, 204, 0.3);
+  border: 2px solid rgba(107, 157, 255, 0.6);
+  border-radius: 30px;
+  animation: badgePulse 3s ease-in-out infinite;
+}
+
+
+
+@keyframes badgePulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(77, 127, 204, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(107, 157, 255, 0.8);
+  }
+}
+
+
+
 /* Hero Section */
 .section-hero {
   min-height: 100vh;
-  background: radial-gradient(ellipse at center, rgba(10, 25, 60, 0.7) 0%, rgba(5, 10, 25, 0.9) 100%);
+  background: radial-gradient(ellipse at center, rgba(10, 25, 60, 0.4) 0%, rgba(0, 0, 0, 0.8) 100%);
 }
 
 .hero-content {
@@ -79,25 +110,102 @@ html, body {
 }
 
 .hero-title {
-  font-size: 5rem;
+  font-size: 5.5rem;
   font-weight: 900;
   margin-bottom: 30px;
-  text-shadow: 0 8px 30px rgba(0, 0, 0, 0.9);
-  letter-spacing: -2px;
-  background: linear-gradient(135deg, #ffffff 0%, #6b9dff 50%, #4d7fcc 100%);
+  text-shadow: 0 8px 40px rgba(77, 127, 204, 0.8), 0 0 80px rgba(107, 157, 255, 0.4);
+  letter-spacing: -3px;
+  background: linear-gradient(135deg, #ffffff 0%, #a0c4ff 50%, #6b9dff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  line-height: 1.1;
+  line-height: 1.05;
+  animation: titleGlow 4s ease-in-out infinite;
+}
+
+@keyframes titleGlow {
+  0%, 100% {
+    text-shadow: 0 8px 40px rgba(77, 127, 204, 0.8), 0 0 80px rgba(107, 157, 255, 0.4);
+  }
+  50% {
+    text-shadow: 0 8px 60px rgba(77, 127, 204, 1), 0 0 120px rgba(107, 157, 255, 0.6);
+  }
 }
 
 .hero-subtitle {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   margin-bottom: 50px;
-  color: #b8d4ff;
-  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
+  color: #d0e4ff;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.9);
   font-weight: 300;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
+}
+
+/* Hero Stats */
+.hero-stats {
+  display: flex;
+  justify-content: center;
+  gap: 60px;
+  margin: 50px 0;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 0 30px rgba(107, 157, 255, 0.8);
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #8ab4ff;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 600;
+}
+
+/* Approach Section */
+.section-approach {
+  min-height: 100vh;
+  background: radial-gradient(ellipse at center, rgba(5, 15, 35, 0.6) 0%, rgba(0, 0, 0, 0.9) 100%);
+}
+
+.approach-content {
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.approach-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  margin-bottom: 30px;
+  color: #ffffff;
+  text-shadow: 0 4px 30px rgba(77, 127, 204, 0.8);
+}
+
+.approach-text {
+  font-size: 1.3rem;
+  line-height: 1.9;
+  color: #b8d4ff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+/* Section Intro Text */
+.section-intro {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #b8d4ff;
+  max-width: 700px;
+  margin: -30px auto 50px;
+  line-height: 1.8;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
 }
 
 /* Call-to-Action Button */
@@ -145,14 +253,34 @@ html, body {
   transform: translateY(-2px) scale(1.02);
 }
 
-.btn-icon {
-  font-size: 1.5rem;
-  animation: pulse 2s ease-in-out infinite;
-}
+
 
 .btn-cta-large {
   padding: 22px 50px;
   font-size: 1.4rem;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-cta-pulse {
+  animation: ctaPulse 3s ease-in-out infinite;
+}
+
+@keyframes ctaPulse {
+  0%, 100% {
+    box-shadow: 0 10px 40px rgba(77, 127, 204, 0.4), 0 0 60px rgba(77, 127, 204, 0.2);
+  }
+  50% {
+    box-shadow: 0 15px 60px rgba(77, 127, 204, 0.8), 0 0 100px rgba(77, 127, 204, 0.5);
+  }
+}
+
+.btn-subtitle {
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0.8;
 }
 
 /* Scroll Hint */
@@ -175,7 +303,7 @@ html, body {
 
 /* Education Section */
 .section-education {
-  background: linear-gradient(180deg, rgba(5, 10, 25, 0.9) 0%, rgba(10, 20, 40, 0.85) 100%);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(5, 10, 20, 0.85) 100%);
   backdrop-filter: blur(10px);
 }
 
@@ -208,6 +336,39 @@ html, body {
   display: block;
 }
 
+.card-type-badge {
+  display: inline-block;
+  padding: 8px 20px;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, #4d7fcc 0%, #2a5a9e 100%);
+  border: 2px solid rgba(107, 157, 255, 0.4);
+  border-radius: 25px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: #ffffff;
+  box-shadow: 0 4px 20px rgba(77, 127, 204, 0.3),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.card-type-badge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.education-card:hover .card-type-badge::before {
+  left: 100%;
+}
+
 .education-card h3 {
   font-size: 1.8rem;
   margin-bottom: 20px;
@@ -237,7 +398,7 @@ html, body {
 
 /* NASA Examples Section */
 .section-examples {
-  background: linear-gradient(180deg, rgba(10, 20, 40, 0.85) 0%, rgba(15, 25, 50, 0.9) 100%);
+  background: linear-gradient(180deg, rgba(5, 10, 20, 0.85) 0%, rgba(10, 15, 30, 0.9) 100%);
 }
 
 .examples-carousel {
@@ -270,39 +431,102 @@ html, body {
 
 .example-card {
   min-width: 350px;
+  height: 500px;
   scroll-snap-align: start;
-  background: rgba(20, 30, 60, 0.7);
-  border: 1px solid rgba(107, 157, 255, 0.3);
-  border-radius: 20px;
-  overflow: hidden;
-  transition: all 0.4s ease;
+  perspective: 1000px;
+  cursor: pointer;
 }
 
-.example-card:hover {
-  transform: scale(1.05);
+.example-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.example-card:hover .example-card-inner {
+  transform: rotateY(180deg);
+}
+
+.example-card-front,
+.example-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(107, 157, 255, 0.3);
+}
+
+.example-card-front {
+  background: rgba(20, 30, 60, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.example-card-back {
+  background: rgba(20, 30, 60, 0.95);
+  transform: rotateY(180deg);
+  backdrop-filter: blur(20px);
   border-color: rgba(107, 157, 255, 0.6);
   box-shadow: 0 20px 60px rgba(77, 127, 204, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .example-image {
   width: 100%;
-  height: 200px;
+  height: 100%;
   background-size: cover;
   background-position: center;
   position: relative;
   display: flex;
   align-items: flex-start;
-  justify-content: flex-end;
-  padding: 15px;
+  justify-content: space-between;
+  flex-direction: column;
+  padding: 25px;
 }
 
 .example-label {
   background: rgba(77, 127, 204, 0.9);
-  padding: 6px 15px;
-  border-radius: 20px;
+  padding: 8px 18px;
+  border-radius: 25px;
   font-size: 0.85rem;
   font-weight: 700;
   color: #ffffff;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(107, 157, 255, 0.4);
+  align-self: flex-end;
+}
+
+.example-title-overlay {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8),
+               0 0 40px rgba(77, 127, 204, 0.6);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  align-self: center;
+  margin-top: auto;
+  margin-bottom: auto;
+  text-align: center;
+  animation: titleGlow 3s ease-in-out infinite;
+}
+
+@keyframes titleGlow {
+  0%, 100% {
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8),
+                 0 0 40px rgba(77, 127, 204, 0.6);
+  }
+  50% {
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8),
+                 0 0 60px rgba(107, 157, 255, 0.9);
+  }
 }
 
 /* Placeholder images with gradients */
@@ -319,20 +543,32 @@ html, body {
 }
 
 .example-content {
-  padding: 30px;
+  padding: 35px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow-y: auto;
 }
 
 .example-content h3 {
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   margin-bottom: 15px;
   color: #ffffff;
+  text-align: center;
+  background: linear-gradient(135deg, #6b9dff, #4d7fcc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .example-content p {
-  font-size: 0.95rem;
-  line-height: 1.7;
+  font-size: 0.9rem;
+  line-height: 1.6;
   color: #b8d4ff;
   margin-bottom: 20px;
+  text-align: center;
 }
 
 .example-specs {
@@ -340,20 +576,31 @@ html, body {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  margin-top: auto;
 }
 
 .example-specs li {
-  font-size: 0.9rem;
-  color: #6b9dff;
+  font-size: 0.85rem;
+  color: #d0e4ff;
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 8px 12px;
+  background: rgba(77, 127, 204, 0.2);
+  border-radius: 8px;
+  border-left: 3px solid #6b9dff;
+}
+
+.spec-label {
+  font-weight: 700;
+  color: #6b9dff;
+  min-width: 80px;
 }
 
 /* Quiz Section */
 .section-quiz {
-  background: linear-gradient(180deg, rgba(15, 25, 50, 0.9) 0%, rgba(10, 15, 35, 0.95) 100%);
+  background: linear-gradient(180deg, rgba(10, 15, 30, 0.9) 0%, rgba(5, 10, 20, 0.95) 100%);
   min-height: 120vh;
 }
 
@@ -451,7 +698,7 @@ html, body {
 
 /* Final CTA Section */
 .section-final-cta {
-  background: linear-gradient(180deg, rgba(10, 15, 35, 0.95) 0%, rgba(5, 10, 25, 0.98) 100%);
+  background: linear-gradient(180deg, rgba(5, 10, 20, 0.95) 0%, rgba(0, 0, 0, 0.98) 100%);
   min-height: 100vh;
   text-align: center;
 }

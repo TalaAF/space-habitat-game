@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import KnowledgeTest from '../components/UI/KnowledgeTest';
 import '../styles/landing.css';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -16,8 +16,7 @@ const LandingPage = () => {
   const rendererRef = useRef(null);
   const moonRef = useRef(null);
   const haloRef = useRef(null);
-  const [quizAnswers, setQuizAnswers] = useState({});
-  const [quizScore, setQuizScore] = useState(null);
+  const engineGlowRef = useRef(null);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -26,235 +25,452 @@ const LandingPage = () => {
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
-    // Camera
+    // Camera - Start far away for dramatic entrance
     const camera = new THREE.PerspectiveCamera(
-      60,
+      75,
       window.innerWidth / window.innerHeight,
       0.1,
-      10000
+      20000
     );
-    camera.position.set(0, 50, 150);
+    camera.position.set(0, 200, 800);
+    camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
-    // Renderer
+    // Renderer with enhanced settings
     const renderer = new THREE.WebGLRenderer({
       canvas: canvasRef.current,
       antialias: true,
-      alpha: true
+      alpha: false
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1;
+    renderer.toneMappingExposure = 1.2;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     rendererRef.current = renderer;
 
-    // Starfield background
-    const starGeometry = new THREE.BufferGeometry();
-    const starCount = 10000;
-    const starPositions = new Float32Array(starCount * 3);
-    
-    for (let i = 0; i < starCount * 3; i += 3) {
-      starPositions[i] = (Math.random() - 0.5) * 2000;
-      starPositions[i + 1] = (Math.random() - 0.5) * 2000;
-      starPositions[i + 2] = (Math.random() - 0.5) * 2000;
-    }
-    
-    starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-    const starMaterial = new THREE.PointsMaterial({
-      color: 0xffffff,
-      size: 0.7,
-      transparent: true,
-      opacity: 0.8
-    });
-    const stars = new THREE.Points(starGeometry, starMaterial);
-    scene.add(stars);
+    // === EPIC STARFIELD SKYBOX ===
+    // Multi-layered starfield for depth
+    const createStarfield = (count, distance, size, color) => {
+      const geometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(count * 3);
+      
+      for (let i = 0; i < count * 3; i += 3) {
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos((Math.random() * 2) - 1);
+        const r = distance + (Math.random() * distance * 0.3);
+        
+        positions[i] = r * Math.sin(phi) * Math.cos(theta);
+        positions[i + 1] = r * Math.sin(phi) * Math.sin(theta);
+        positions[i + 2] = r * Math.cos(phi);
+      }
+      
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const material = new THREE.PointsMaterial({
+        color: color,
+        size: size,
+        transparent: true,
+        opacity: 0.9,
+        sizeAttenuation: true
+      });
+      return new THREE.Points(geometry, material);
+    };
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0x404040, 1);
-    scene.add(ambientLight);
+    // Multiple star layers for depth
+    scene.add(createStarfield(15000, 3000, 1.5, 0xffffff)); // Distant stars
+    scene.add(createStarfield(8000, 2000, 1.0, 0xaaccff));  // Mid stars (blue tint)
+    scene.add(createStarfield(5000, 1500, 0.8, 0xffffaa));  // Close stars (yellow tint)
 
-    const sunLight = new THREE.DirectionalLight(0xffffff, 2);
-    sunLight.position.set(100, 50, 50);
+    // === DRAMATIC CINEMATIC LIGHTING ===
+    // Harsh sun light (like real space)
+    const sunLight = new THREE.DirectionalLight(0xfff8e1, 4);
+    sunLight.position.set(500, 300, 400);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 100;
+    sunLight.shadow.camera.far = 2000;
+    sunLight.shadow.camera.left = -500;
+    sunLight.shadow.camera.right = 500;
+    sunLight.shadow.camera.top = 500;
+    sunLight.shadow.camera.bottom = -500;
     scene.add(sunLight);
 
-    const fillLight = new THREE.DirectionalLight(0x6699ff, 0.5);
-    fillLight.position.set(-50, 20, -50);
-    scene.add(fillLight);
+    // Very subtle ambient (space is dark!)
+    const ambientLight = new THREE.AmbientLight(0x0a0a1a, 0.3);
+    scene.add(ambientLight);
 
-    const rimLight = new THREE.DirectionalLight(0xffffff, 1);
-    rimLight.position.set(0, 30, -100);
+    // Rim light for dramatic silhouettes
+    const rimLight = new THREE.DirectionalLight(0x4466ff, 1.5);
+    rimLight.position.set(-300, 100, -400);
     scene.add(rimLight);
 
-    // Load 3D Models
+    // === LOAD 3D MODELS (MASSIVE SCALE) ===
     const loader = new GLTFLoader();
 
-    // Load Moon model
+    // Load Moon model - EPIC MASSIVE SCALE
     loader.load(
       '/月球+三维+模型.glb',
       (gltf) => {
         const moon = gltf.scene;
-        moon.position.set(-80, -30, -100);
-        moon.scale.set(40, 40, 40);
+        moon.position.set(-150, -100, -300); // Closer to camera
+        moon.scale.set(250, 250, 250); // HUGE - dominates the view
+        moon.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
         moonRef.current = moon;
         scene.add(moon);
       },
       undefined,
       (error) => {
-        console.log('Moon model not found, creating placeholder');
-        // Fallback: Create a moon sphere
-        const moonGeometry = new THREE.SphereGeometry(30, 64, 64);
+        console.log('Moon model not found, creating epic placeholder');
+        // Epic fallback moon with craters
+        const moonGeometry = new THREE.SphereGeometry(200, 128, 128); // MASSIVE radius
+        
+        // Add crater displacement
+        const positions = moonGeometry.attributes.position;
+        for (let i = 0; i < positions.count; i++) {
+          const x = positions.getX(i);
+          const y = positions.getY(i);
+          const z = positions.getZ(i);
+          const noise = Math.sin(x * 0.1) * Math.cos(y * 0.1) * Math.sin(z * 0.1) * 5;
+          const length = Math.sqrt(x * x + y * y + z * z);
+          positions.setXYZ(i, x + (x / length) * noise, y + (y / length) * noise, z + (z / length) * noise);
+        }
+        moonGeometry.computeVertexNormals();
+        
         const moonMaterial = new THREE.MeshStandardMaterial({
-          color: 0xaaaaaa,
-          roughness: 0.9,
-          metalness: 0.1
+          color: 0x9a9a9a,
+          roughness: 0.95,
+          metalness: 0.05,
+          bumpScale: 8
         });
         const moon = new THREE.Mesh(moonGeometry, moonMaterial);
-        moon.position.set(-80, -30, -100);
+        moon.position.set(-150, -100, -300); // Closer to camera
+        moon.castShadow = true;
+        moon.receiveShadow = true;
         moonRef.current = moon;
         scene.add(moon);
       }
     );
 
-    // Load HALO module
+    // Load HALO module - EPIC SCALE
     loader.load(
       '/halo+habitat+module+3d+model.glb',
       (gltf) => {
         const halo = gltf.scene;
-        halo.position.set(0, 0, 0);
-        halo.scale.set(5, 5, 5);
+        halo.position.set(0, 20, -50); // Much closer to camera
+        halo.scale.set(25, 25, 25); // MASSIVE scale
+        halo.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
         haloRef.current = halo;
         scene.add(halo);
+        
+        // Add engine glow for landing sequence
+        const glowGeometry = new THREE.SphereGeometry(3, 16, 16);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+          color: 0xff6600,
+          transparent: true,
+          opacity: 0
+        });
+        const engineGlow = new THREE.Mesh(glowGeometry, glowMaterial);
+        engineGlow.position.set(0, -10, 0);
+        halo.add(engineGlow);
+        engineGlowRef.current = engineGlow;
       },
       undefined,
       (error) => {
-        console.log('HALO model not found, creating placeholder');
-        // Fallback: Create a cylindrical habitat
+        console.log('HALO model not found, creating epic placeholder');
         const haloGroup = new THREE.Group();
         
-        const cylinderGeometry = new THREE.CylinderGeometry(8, 8, 20, 32);
+        // Main cylindrical habitat - MUCH LARGER
+        const cylinderGeometry = new THREE.CylinderGeometry(20, 20, 60, 32); // Doubled size
         const cylinderMaterial = new THREE.MeshStandardMaterial({
+          color: 0xdddddd,
+          metalness: 0.8,
+          roughness: 0.25,
+          emissive: 0x222222,
+          emissiveIntensity: 0.2
+        });
+        const cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
+        cylinder.rotation.z = Math.PI / 2;
+        cylinder.castShadow = true;
+        cylinder.receiveShadow = true;
+        haloGroup.add(cylinder);
+
+        // Add windows - larger and more visible
+        for (let i = 0; i < 8; i++) {
+          const angle = (i / 8) * Math.PI * 2;
+          const windowGeometry = new THREE.BoxGeometry(5, 3.5, 0.8); // Bigger windows
+          const windowMaterial = new THREE.MeshStandardMaterial({
+            color: 0x88ccff,
+            emissive: 0x88ccff,
+            emissiveIntensity: 0.5,
+            metalness: 0.9,
+            roughness: 0.1
+          });
+          const window = new THREE.Mesh(windowGeometry, windowMaterial);
+          window.position.set(
+            Math.cos(angle) * 21, // Adjusted for larger cylinder
+            0,
+            Math.sin(angle) * 21
+          );
+          window.lookAt(0, 0, 0);
+          haloGroup.add(window);
+        }
+
+        // Solar panels - MASSIVE
+        const panelGeometry = new THREE.BoxGeometry(70, 1.2, 25); // Much bigger
+        const panelMaterial = new THREE.MeshStandardMaterial({
+          color: 0x1a3d7c,
+          metalness: 0.9,
+          roughness: 0.1,
+          emissive: 0x0a1d3c,
+          emissiveIntensity: 0.3
+        });
+        const panel1 = new THREE.Mesh(panelGeometry, panelMaterial);
+        panel1.position.set(0, 25, 0); // Further out
+        panel1.castShadow = true;
+        const panel2 = new THREE.Mesh(panelGeometry, panelMaterial);
+        panel2.position.set(0, -25, 0); // Further out
+        panel2.castShadow = true;
+        haloGroup.add(panel1, panel2);
+
+        // Docking ports - larger
+        const dockGeometry = new THREE.CylinderGeometry(5, 3.5, 8, 16); // Bigger
+        const dockMaterial = new THREE.MeshStandardMaterial({
           color: 0xcccccc,
           metalness: 0.7,
           roughness: 0.3
         });
-        const cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
-        cylinder.rotation.x = Math.PI / 2;
-        haloGroup.add(cylinder);
+        const dock = new THREE.Mesh(dockGeometry, dockMaterial);
+        dock.position.set(35, 0, 0); // Adjusted for larger module
+        dock.rotation.z = Math.PI / 2;
+        haloGroup.add(dock);
 
-        // Add solar panels
-        const panelGeometry = new THREE.BoxGeometry(20, 0.5, 8);
-        const panelMaterial = new THREE.MeshStandardMaterial({
-          color: 0x1a3d7c,
-          metalness: 0.8,
-          roughness: 0.2
-        });
-        const panel1 = new THREE.Mesh(panelGeometry, panelMaterial);
-        panel1.position.set(0, 10, 0);
-        const panel2 = new THREE.Mesh(panelGeometry, panelMaterial);
-        panel2.position.set(0, -10, 0);
-        haloGroup.add(panel1, panel2);
-
+        haloGroup.position.set(0, 20, -50); // Much closer
         haloRef.current = haloGroup;
         scene.add(haloGroup);
+        
+        // Engine glow - larger
+        const glowGeometry = new THREE.SphereGeometry(8, 16, 16); // Bigger glow
+        const glowMaterial = new THREE.MeshBasicMaterial({
+          color: 0xff6600,
+          transparent: true,
+          opacity: 0
+        });
+        const engineGlow = new THREE.Mesh(glowGeometry, glowMaterial);
+        engineGlow.position.set(-35, 0, 0); // Adjusted for larger module
+        haloGroup.add(engineGlow);
+        engineGlowRef.current = engineGlow;
       }
     );
 
-    // Animation loop
+    // Animation loop with dynamic rendering
     let animationFrameId;
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
       
-      // Gentle rotation for visual interest
-      if (haloRef.current) {
-        haloRef.current.rotation.y += 0.001;
-      }
+      // Subtle rotation for realism
       if (moonRef.current) {
-        moonRef.current.rotation.y += 0.0005;
+        moonRef.current.rotation.y += 0.0002;
       }
 
       renderer.render(scene, camera);
     };
     animate();
 
-    // GSAP ScrollTrigger animations
-    const timeline = gsap.timeline({
+    // === EPIC SCROLLYTELLING ANIMATION SEQUENCE ===
+    const masterTimeline = gsap.timeline({
       scrollTrigger: {
         trigger: '.landing-page',
         start: 'top top',
         end: 'bottom bottom',
-        scrub: 1,
+        scrub: 2, // Smoother scrubbing
+        anticipatePin: 1,
       }
     });
 
-    // Animation sequence
-    timeline
-      // Start: Wide shot
+    // ===== PHASE 1: THE DRAMATIC APPROACH =====
+    // (Scroll progress: 0% - 25%)
+    masterTimeline
       .to(camera.position, {
-        x: 20,
-        y: 40,
-        z: 120,
-        duration: 1
+        x: -50,
+        y: 100,
+        z: 400,
+        duration: 3,
+        ease: 'power2.inOut'
       }, 0)
-      // Mid: Orbit around HALO
+      .to(camera.rotation, {
+        x: -0.2,
+        duration: 3,
+        ease: 'power2.inOut'
+      }, 0)
+      // Moon sweeps past dramatically
+      .to(moonRef.current ? moonRef.current.position : {}, {
+        x: -100,
+        y: -200,
+        z: -200,
+        duration: 3,
+        ease: 'power1.out'
+      }, 0);
+
+    // ===== PHASE 2: FLY-IN TO HALO =====
+    // (Scroll progress: 25% - 50%)
+    masterTimeline
       .to(camera.position, {
-        x: 50,
-        y: 20,
-        z: 50,
-        duration: 1
-      }, 1)
-      // Approach HALO
-      .to(camera.position, {
-        x: 25,
-        y: 5,
-        z: 25,
-        duration: 1
-      }, 2)
-      // Close-up and reveal interior
-      .to(camera.position, {
-        x: 15,
-        y: 0,
-        z: 15,
-        duration: 1
+        x: 80,
+        y: 50,
+        z: 80,
+        duration: 3,
+        ease: 'power2.inOut'
+      }, 3)
+      .to(camera.rotation, {
+        x: -0.3,
+        y: 0.2,
+        duration: 3
       }, 3);
 
-    // HALO transparency reveal
-    gsap.to({}, {
-      scrollTrigger: {
-        trigger: '.section-quiz',
-        start: 'top center',
-        onEnter: () => {
+    // ===== PHASE 3: 360° ORBITAL INSPECTION =====
+    // (Scroll progress: 50% - 70%)
+    const orbitRadius = 60;
+    const orbitSteps = 5;
+    
+    for (let i = 0; i <= orbitSteps; i++) {
+      const angle = (i / orbitSteps) * Math.PI * 2;
+      const x = Math.cos(angle) * orbitRadius;
+      const z = Math.sin(angle) * orbitRadius;
+      
+      masterTimeline.to(camera.position, {
+        x: x,
+        y: 40 + Math.sin(angle * 2) * 10, // Slight bobbing
+        z: z,
+        duration: 1,
+        ease: 'sine.inOut',
+        onUpdate: () => {
           if (haloRef.current) {
-            haloRef.current.traverse((child) => {
-              if (child.isMesh) {
-                child.material.transparent = true;
-                gsap.to(child.material, {
-                  opacity: 0.3,
-                  duration: 1.5
-                });
-              }
-            });
+            camera.lookAt(haloRef.current.position);
           }
-        },
-        onLeaveBack: () => {
+        }
+      }, 6 + i);
+    }
+
+    // ===== PHASE 4: THE LUNAR LANDING SEQUENCE =====
+    // (Scroll progress: 70% - 100%)
+    
+    // 4a: De-orbit burn preparation
+    masterTimeline
+      .to(camera.position, {
+        x: -40,
+        y: 60,
+        z: 40,
+        duration: 2,
+        ease: 'power1.in'
+      }, 11)
+      // HALO rotates for de-orbit
+      .to(haloRef.current ? haloRef.current.rotation : {}, {
+        y: Math.PI / 4,
+        z: -Math.PI / 6,
+        duration: 2,
+        ease: 'power2.inOut'
+      }, 11)
+      // Engine glow activates
+      .to(engineGlowRef.current ? engineGlowRef.current.material : {}, {
+        opacity: 0.8,
+        duration: 1.5,
+        ease: 'power2.in'
+      }, 11.5);
+
+    // 4b: Descent arc towards lunar surface
+    masterTimeline
+      .to(haloRef.current ? haloRef.current.position : {}, {
+        x: -120,
+        y: -80,
+        z: -250,
+        duration: 4,
+        ease: 'power1.inOut'
+      }, 13)
+      .to(camera.position, {
+        x: -80,
+        y: -20,
+        z: -150,
+        duration: 4,
+        ease: 'power1.inOut',
+        onUpdate: () => {
+          if (haloRef.current) {
+            camera.lookAt(haloRef.current.position);
+          }
+        }
+      }, 13)
+      // Engine glow pulses
+      .to(engineGlowRef.current ? engineGlowRef.current.material : {}, {
+        opacity: 1,
+        duration: 2,
+        ease: 'sine.inOut',
+        yoyo: true,
+        repeat: 2
+      }, 13);
+
+    // 4c: Final approach - Hull transparency reveal
+    masterTimeline
+      .to(camera.position, {
+        x: -100,
+        y: -60,
+        z: -200,
+        duration: 2,
+        ease: 'power2.out'
+      }, 17)
+      .to({}, {
+        duration: 1,
+        onStart: () => {
+          // Make HALO hull transparent to reveal interior
           if (haloRef.current) {
             haloRef.current.traverse((child) => {
-              if (child.isMesh && child.material.transparent) {
-                gsap.to(child.material, {
-                  opacity: 1,
-                  duration: 1.5
+              if (child.isMesh && child.material) {
+                const originalMaterial = child.material;
+                if (!originalMaterial.transparent) {
+                  originalMaterial.transparent = true;
+                  originalMaterial.opacity = 1;
+                }
+                gsap.to(originalMaterial, {
+                  opacity: 0.25,
+                  duration: 2,
+                  ease: 'power2.inOut'
                 });
               }
             });
           }
         }
-      }
+      }, 18);
+
+    // Sync content sections with camera views
+    ScrollTrigger.create({
+      trigger: '.section-education',
+      start: 'top center',
+      end: 'bottom center',
+      onEnter: () => console.log('Viewing construction types'),
     });
 
-    // Camera always looks at HALO
-    const updateCameraTarget = () => {
-      camera.lookAt(0, 0, 0);
-    };
-    timeline.eventCallback('onUpdate', updateCameraTarget);
+    ScrollTrigger.create({
+      trigger: '.section-examples',
+      start: 'top center',
+      end: 'bottom center',
+      onEnter: () => console.log('Inspecting HALO details'),
+    });
+
+    ScrollTrigger.create({
+      trigger: '.section-final-cta',
+      start: 'top center',
+      onEnter: () => console.log('Landing sequence initiated'),
+    });
 
     // Handle resize
     const handleResize = () => {
@@ -296,257 +512,205 @@ const LandingPage = () => {
 
       {/* Scrollable Content */}
       <div className="landing-content">
-        {/* Hero Section */}
+        {/* Hero Section - THE MISSION */}
         <section className="section section-hero">
           <div className="hero-content">
             <h1 className="hero-title">
-              Become a Deep Space Architect
+              Your Home Beyond the End
             </h1>
             <p className="hero-subtitle">
-              Design life-sustaining habitats for humanity's journey beyond Earth
+              Create visual layouts for space habitats that will support crews on the Moon, 
+              in transit to Mars, and on the Martian surface. Balance structure, function, 
+              and crew needs to enable humanity's sustained presence in deep space.
             </p>
-            <Link to="/designer" className="btn-cta">
-              <span className="btn-icon">🚀</span>
-              Launch the Design Lab
-            </Link>
             <div className="hero-scroll-hint">
-              <span>Scroll to explore</span>
+              <span>Begin Mission Briefing</span>
               <span className="scroll-arrow">↓</span>
             </div>
           </div>
         </section>
 
-        {/* Educational Section */}
+        {/* Transition Section - THE CHALLENGE */}
+        <section className="section section-approach">
+          <div className="approach-content">
+            <h2 className="approach-title">The Artemis Vision</h2>
+            <p className="approach-text">
+              Through the Artemis campaign, NASA is returning humans to the Moon to establish 
+              a sustained presence. Space habitats are critical "homes in space" that must support 
+              waste management, thermal control, life support, communications, power, food preparation, 
+              medical care, sleep, and exercise. Your challenge: create and assess habitat layouts 
+              that enable crews to thrive in the harshest environments in our solar system.
+            </p>
+          </div>
+        </section>
+
+        {/* Educational Section - THE BUILDING BLOCKS */}
         <section className="section section-education">
           <div className="content-wrapper">
-            <h2 className="section-title">What is a Space Habitat?</h2>
+            <h2 className="section-title">The Building Blocks of Deep Space</h2>
+            <p className="section-intro">
+              Three fundamental construction approaches, each with critical engineering trade-offs. 
+              Your choice determines launch mass, deployment complexity, and mission feasibility.
+            </p>
             <div className="education-grid">
               <div className="education-card">
-                <div className="card-icon">🏗️</div>
-                <h3>Rigid Structures</h3>
+                <div className="card-type-badge">TYPE 01</div>
+                <h3>Rigid Construction</h3>
                 <p>
-                  Traditional metal and composite modules like the ISS. These offer maximum
-                  protection and durability but are heavy and expensive to launch.
+                  <strong>The proven workhorse.</strong> Launched fully assembled, these metallic 
+                  habitats offer the highest reliability and protection. Think ISS modules and 
+                  the HALO unit—mission-ready on arrival.
                 </p>
                 <div className="card-stats">
+                  <span>✓ Mission-ready on arrival</span>
+                  <span>✗ Heavy, limited by fairing size</span>
                   <span>Mass Multiplier: 1.0×</span>
-                  <span>Launch Complexity: High</span>
                 </div>
               </div>
               <div className="education-card">
-                <div className="card-icon">🎈</div>
-                <h3>Inflatable Modules</h3>
+                <div className="card-type-badge">TYPE 02</div>
+                <h3>Inflatable Habitats</h3>
                 <p>
-                  Expandable habitats like Bigelow's BEAM that launch compact and inflate
-                  in space. Lighter and more spacious, but require careful deployment.
+                  <strong>The smart solution for volume.</strong> Launched in a compressed state, 
+                  these habitats expand in space to create massive living areas. Best volume-to-mass 
+                  ratio—3× more space for the same launch weight.
                 </p>
                 <div className="card-stats">
+                  <span>✓ Massive volume, low mass</span>
+                  <span>✗ Complex deployment</span>
                   <span>Mass Multiplier: 0.7×</span>
-                  <span>Volume: 3× larger</span>
                 </div>
               </div>
               <div className="education-card">
-                <div className="card-icon">🌙</div>
+                <div className="card-type-badge">TYPE 03</div>
                 <h3>ISRU Construction</h3>
                 <p>
-                  In-Situ Resource Utilization: Build using local materials like lunar
-                  regolith or Martian soil. Minimal launch mass, but requires setup time.
+                  <strong>Living off the land.</strong> This advanced method uses robotic systems 
+                  to build habitats from local resources like lunar regolith or Martian soil. 
+                  Drastically reduces launch mass.
                 </p>
                 <div className="card-stats">
+                  <span>✓ Minimal launch mass</span>
+                  <span>✗ Requires construction equipment</span>
                   <span>Mass Multiplier: 0.4×</span>
-                  <span>Setup: Complex</span>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* NASA Examples Section */}
+        {/* NASA Examples Section - INSPIRATION FROM NASA'S DRAWING BOARD */}
         <section className="section section-examples">
           <div className="content-wrapper">
-            <h2 className="section-title">Inspired by NASA's Legacy</h2>
+            <h2 className="section-title">Inspiration from NASA's Drawing Board</h2>
+            <p className="section-intro">
+              You're building upon a legacy of incredible achievements. These historic and future 
+              missions prove that humans can thrive in space—and show what's possible when we dare to dream big.
+            </p>
             <div className="examples-carousel">
               <div className="example-card">
-                <div className="example-image iss-image">
-                  <div className="example-label">1998-Present</div>
-                </div>
-                <div className="example-content">
-                  <h3>International Space Station</h3>
-                  <p>
-                    The largest human-made structure in low Earth orbit. A marvel of
-                    international cooperation, hosting continuous human presence since 2000.
-                  </p>
-                  <ul className="example-specs">
-                    <li>🏠 Crew: Up to 7</li>
-                    <li>⚡ Power: 120 kW solar arrays</li>
-                    <li>📏 Volume: 388 m³ pressurized</li>
-                  </ul>
-                </div>
-              </div>
-              <div className="example-card">
-                <div className="example-image gateway-image">
-                  <div className="example-label">2020s</div>
-                </div>
-                <div className="example-content">
-                  <h3>Lunar Gateway</h3>
-                  <p>
-                    NASA's planned space station in lunar orbit. Will serve as a staging
-                    point for Moon missions and a testbed for deep space technologies.
-                  </p>
-                  <ul className="example-specs">
-                    <li>🏠 Crew: Up to 4</li>
-                    <li>🌙 Orbit: Near-Rectilinear Halo</li>
-                    <li>🔬 Modules: HALO, PPE, I-HAB</li>
-                  </ul>
+                <div className="example-card-inner">
+                  <div className="example-card-front">
+                    <div className="example-image skylab-image">
+                      <div className="example-label">1973-1974</div>
+                      <div className="example-title-overlay">Skylab</div>
+                    </div>
+                  </div>
+                  <div className="example-card-back">
+                    <div className="example-content">
+                      <h3>Skylab: America's First Home in Space</h3>
+                      <p>
+                        A triumph of engineering, Skylab was built from the repurposed upper stage 
+                        of a Saturn V rocket. From 1973-1974, it proved humans could live and work 
+                        in space for months at a time, paving the way for all future stations.
+                      </p>
+                      <ul className="example-specs">
+                        <li><span className="spec-label">Crew:</span> 3 astronauts</li>
+                        <li><span className="spec-label">Record:</span> 84 days continuous</li>
+                        <li><span className="spec-label">Volume:</span> 361 m³ pressurized</li>
+                        <li><span className="spec-label">Legacy:</span> First US space station</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="example-card">
-                <div className="example-image skylab-image">
-                  <div className="example-label">1973-1979</div>
+                <div className="example-card-inner">
+                  <div className="example-card-front">
+                    <div className="example-image iss-image">
+                      <div className="example-label">1998-Present</div>
+                      <div className="example-title-overlay">International Space Station</div>
+                    </div>
+                  </div>
+                  <div className="example-card-back">
+                    <div className="example-content">
+                      <h3>International Space Station: A City in Orbit</h3>
+                      <p>
+                        The ultimate example of modular design and international collaboration. 
+                        For over two decades, the ISS has been a continuously inhabited laboratory, 
+                        pushing the boundaries of science and long-duration spaceflight.
+                      </p>
+                      <ul className="example-specs">
+                        <li><span className="spec-label">Crew:</span> Up to 7 people</li>
+                        <li><span className="spec-label">Power:</span> 120 kW solar arrays</li>
+                        <li><span className="spec-label">Volume:</span> 388 m³ habitable</li>
+                        <li><span className="spec-label">Legacy:</span> 20+ years occupied</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
-                <div className="example-content">
-                  <h3>Skylab</h3>
-                  <p>
-                    America's first space station. Pioneered long-duration spaceflight
-                    research and proved humans could live and work in space for months.
-                  </p>
-                  <ul className="example-specs">
-                    <li>🏠 Crew: 3</li>
-                    <li>⏱️ Longest mission: 84 days</li>
-                    <li>📏 Volume: 361 m³</li>
-                  </ul>
+              </div>
+            <div className="example-card">
+              <div className="example-card-inner">
+                <div className="example-card-front">
+                  <div className="example-image iss-image">
+                    <div className="example-label">2020s-Future</div>
+                    <div className="example-title-overlay">International Space Station</div>
+                  </div>
+                </div>
+                <div className="example-card-back">
+                  <div className="example-content">
+                    <h3>Lunar Gateway: Humanity's Staging Point to the Moon</h3>
+                    <p>
+                      The future of exploration. The Gateway, with the HALO module at its heart, 
+                      will be the first space station in lunar orbit, serving as a command center 
+                      and home for Artemis astronauts venturing to the lunar surface.
+                    </p>
+                    <ul className="example-specs">
+                      <li> Crew: Up to 4 astronauts</li>
+                      <li> Location: Lunar orbit (NRHO)</li>
+                      <li> Modules: HALO, PPE, I-HAB</li>
+                      <li> Mission: Gateway to Mars</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section> 
 
-        {/* Interactive Quiz Section */}
+        {/* Knowledge Test Section */}
         <section className="section section-quiz">
           <div className="content-wrapper">
-            <h2 className="section-title">Test Your Knowledge</h2>
-            <div className="quiz-container">
-              <div className="quiz-question">
-                <h3>1. What is the primary advantage of inflatable habitats?</h3>
-                <div className="quiz-options">
-                  <button
-                    className={`quiz-option ${quizAnswers.q1 === 'A' ? 'selected' : ''}`}
-                    onClick={() => handleQuizAnswer('q1', 'A')}
-                  >
-                    A. They are cheaper to manufacture
-                  </button>
-                  <button
-                    className={`quiz-option ${quizAnswers.q1 === 'B' ? 'selected' : ''}`}
-                    onClick={() => handleQuizAnswer('q1', 'B')}
-                  >
-                    B. They provide more volume for less launch mass
-                  </button>
-                  <button
-                    className={`quiz-option ${quizAnswers.q1 === 'C' ? 'selected' : ''}`}
-                    onClick={() => handleQuizAnswer('q1', 'C')}
-                  >
-                    C. They are more durable than metal
-                  </button>
-                </div>
-              </div>
-
-              <div className="quiz-question">
-                <h3>2. How many people can the ISS accommodate?</h3>
-                <div className="quiz-options">
-                  <button
-                    className={`quiz-option ${quizAnswers.q2 === 'A' ? 'selected' : ''}`}
-                    onClick={() => handleQuizAnswer('q2', 'A')}
-                  >
-                    A. Up to 3
-                  </button>
-                  <button
-                    className={`quiz-option ${quizAnswers.q2 === 'B' ? 'selected' : ''}`}
-                    onClick={() => handleQuizAnswer('q2', 'B')}
-                  >
-                    B. Up to 5
-                  </button>
-                  <button
-                    className={`quiz-option ${quizAnswers.q2 === 'C' ? 'selected' : ''}`}
-                    onClick={() => handleQuizAnswer('q2', 'C')}
-                  >
-                    C. Up to 7
-                  </button>
-                </div>
-              </div>
-
-              <div className="quiz-question">
-                <h3>3. What does ISRU stand for?</h3>
-                <div className="quiz-options">
-                  <button
-                    className={`quiz-option ${quizAnswers.q3 === 'A' ? 'selected' : ''}`}
-                    onClick={() => handleQuizAnswer('q3', 'A')}
-                  >
-                    A. In-Situ Resource Utilization
-                  </button>
-                  <button
-                    className={`quiz-option ${quizAnswers.q3 === 'B' ? 'selected' : ''}`}
-                    onClick={() => handleQuizAnswer('q3', 'B')}
-                  >
-                    B. International Space Research Unit
-                  </button>
-                  <button
-                    className={`quiz-option ${quizAnswers.q3 === 'C' ? 'selected' : ''}`}
-                    onClick={() => handleQuizAnswer('q3', 'C')}
-                  >
-                    C. Integrated Systems for Rocket Upgrades
-                  </button>
-                </div>
-              </div>
-
-              <button className="btn-submit-quiz" onClick={handleSubmitQuiz}>
-                Submit Answers
-              </button>
-
-              {quizScore !== null && (
-                <div className="quiz-result">
-                  <h3>Your Score: {quizScore}/3</h3>
-                  <p>
-                    {quizScore === 3 && "Perfect! You're ready to be a space architect! 🌟"}
-                    {quizScore === 2 && "Great job! You have strong knowledge of space habitats! 🚀"}
-                    {quizScore === 1 && "Good start! Keep learning about space exploration! 🌙"}
-                    {quizScore === 0 && "Keep exploring! The design lab will teach you more! 🛸"}
-                  </p>
-                </div>
-              )}
-            </div>
+            <KnowledgeTest />
           </div>
         </section>
 
-        {/* Final CTA Section */}
+        {/* Final CTA Section - YOUR MISSION AWAITS */}
         <section className="section section-final-cta">
           <div className="content-wrapper">
-            <h2 className="final-cta-title">Ready to Build the Future?</h2>
+            <h2 className="final-cta-title">Mission Control: You Are Go for Design</h2>
             <p className="final-cta-subtitle">
-              Design your own space habitat using NASA-inspired modules and real engineering constraints.
-              Balance power, life support, crew comfort, and mission requirements.
+              You've learned the fundamentals—now it's time to put them into practice. 
+              Enter the Habitat Design Lab and create your own space habitat layout using 
+              real NASA modules, engineering constraints, and mission parameters. Define shapes, 
+              partition volumes, and optimize layouts for crew health and mission success.
             </p>
-            <Link to="/designer" className="btn-cta btn-cta-large">
-              <span className="btn-icon">🚀</span>
+            <Link to="/designer" className="btn-cta btn-cta-large btn-cta-pulse">
               Launch the Design Lab
+              <span className="btn-subtitle">Start Building Your Habitat</span>
             </Link>
-            <div className="final-cta-features">
-              <div className="feature-item">
-                <span className="feature-icon">🏗️</span>
-                <span>11 Module Types</span>
-              </div>
-              <div className="feature-item">
-                <span className="feature-icon">📊</span>
-                <span>Real NASA Specs</span>
-              </div>
-              <div className="feature-item">
-                <span className="feature-icon">🎯</span>
-                <span>Mission Validation</span>
-              </div>
-              <div className="feature-item">
-                <span className="feature-icon">🛤️</span>
-                <span>Path Analysis</span>
-              </div>
-            </div>
           </div>
         </section>
       </div>
