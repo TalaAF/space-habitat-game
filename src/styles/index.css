@@ -7,7 +7,7 @@
 body {
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #000510 0%, #1a0b2e 100%);
+  background: #000000; /* Pure black space theme */
   color: #fff;
   overflow: hidden;
 }
@@ -19,63 +19,98 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #000510 0%, #1a0b2e 100%);
+  background: #000000; /* Pure black like landing page */
+  background: radial-gradient(ellipse at center, rgba(10, 25, 60, 0.4) 0%, rgba(0, 0, 0, 0.95) 100%);
 }
 
 .menu-content {
   text-align: center;
   max-width: 600px;
-  padding: 40px;
-  background: rgba(255, 255, 255, 0.05);
+  height: 650px;
+  padding: 50px;
+  background: rgba(77, 127, 204, 0.08);
   border-radius: 20px;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(107, 157, 255, 0.3);
+  box-shadow: 0 0 40px rgba(77, 127, 204, 0.3);
+  animation: menuGlow 3s ease-in-out infinite;
+}
+
+@keyframes menuGlow {
+  0%, 100% {
+    box-shadow: 0 0 40px rgba(77, 127, 204, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 60px rgba(107, 157, 255, 0.5);
+  }
 }
 
 .game-title {
-  font-size: 3rem;
+  font-size: 3.5rem;
   margin-bottom: 20px;
-  background: linear-gradient(45deg, #4488ff, #ff44aa);
+  font-weight: 900;
+  background: linear-gradient(135deg, #ffffff 0%, #a0c4ff 50%, #6b9dff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  text-shadow: 0 8px 40px rgba(77, 127, 204, 0.8);
+  letter-spacing: -1px;
 }
 
 .game-subtitle {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   margin-bottom: 40px;
-  color: #aaaaff;
+  color: #d0e4ff;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.9);
+  font-weight: 300;
+  letter-spacing: 0.5px;
 }
 
 .menu-buttons {
-  margin: 30px 0;
+  margin: 40px 0;
 }
 
 .btn-start {
-  background: linear-gradient(45deg, #4488ff, #6644ff);
+  background: linear-gradient(135deg, #4d7fcc 0%, #6b9dff 100%);
   color: white;
-  border: none;
-  padding: 15px 50px;
-  font-size: 1.3rem;
-  border-radius: 10px;
+  border: 2px solid rgba(160, 196, 255, 0.5);
+  padding: 18px 60px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border-radius: 50px;
   cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 4px 15px rgba(68, 136, 255, 0.4);
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 30px rgba(77, 127, 204, 0.5), 0 0 40px rgba(107, 157, 255, 0.3);
+  text-transform: uppercase;
 }
 
 .btn-start:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(68, 136, 255, 0.6);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(77, 127, 204, 0.7), 0 0 60px rgba(107, 157, 255, 0.5);
+  background: linear-gradient(135deg, #5d8fdc 0%, #7badff 100%);
+  border-color: rgba(160, 196, 255, 0.8);
+}
+
+.btn-start:active {
+  transform: translateY(-1px);
 }
 
 .game-info {
-  margin-top: 40px;
+  margin-top: 50px;
   text-align: left;
+  padding: 25px;
+  background: rgba(77, 127, 204, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(107, 157, 255, 0.2);
 }
 
 .game-info h3 {
-  margin-bottom: 15px;
-  color: #aaaaff;
+  margin-bottom: 20px;
+  color: #a0c4ff;
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 1px;
 }
 
 .game-info ul {
@@ -84,16 +119,20 @@ body {
 }
 
 .game-info li {
-  padding: 8px 0;
-  padding-left: 25px;
+  padding: 10px 0;
+  padding-left: 30px;
   position: relative;
+  color: #d0e4ff;
+  font-size: 1.05rem;
 }
 
 .game-info li:before {
   content: '→';
   position: absolute;
   left: 0;
-  color: #4488ff;
+  color: #6b9dff;
+  font-size: 1.3rem;
+  font-weight: bold;
 }
 
 /* App Container */
