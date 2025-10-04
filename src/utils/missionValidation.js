@@ -63,6 +63,42 @@ export const MODULE_SPECS = {
     power: -0.5,
     lifeSupport: 0,
     tags: ['utility', 'dirty', 'noisy'] // Suitport area
+  },
+  galley: {
+    name: 'Galley',
+    mass: 2.2,
+    volume: 12,
+    category: 'crew',
+    power: -1.5, // Heating, refrigeration, water
+    lifeSupport: 0,
+    tags: ['public', 'noisy', 'humid']
+  },
+  exercise: {
+    name: 'Exercise Module',
+    mass: 1.8,
+    volume: 10,
+    category: 'crew',
+    power: -0.6,
+    lifeSupport: 0,
+    tags: ['public', 'noisy', 'clean']
+  },
+  command: {
+    name: 'Command Center',
+    mass: 2.5,
+    volume: 14,
+    category: 'essential',
+    power: -2.0, // Computers, communications
+    lifeSupport: 0,
+    tags: ['public', 'work', 'clean']
+  },
+  workshop: {
+    name: 'Workshop',
+    mass: 2.0,
+    volume: 12,
+    category: 'utility',
+    power: -1.0, // Power tools
+    lifeSupport: 0,
+    tags: ['utility', 'noisy', 'dirty']
   }
 };
 

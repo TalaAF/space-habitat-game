@@ -1456,6 +1456,7 @@ body {
   display: flex;
   align-items: center;
   gap: 15px;
+  max-height: 80px; /* Prevent vertical overflow */
 }
 
 .module-bar-label {
@@ -1463,6 +1464,7 @@ body {
   font-weight: bold;
   font-size: 1rem;
   white-space: nowrap;
+  flex-shrink: 0; /* Keep label always visible */
 }
 
 .module-bar-items {
@@ -1470,6 +1472,31 @@ body {
   flex-direction: row;
   gap: 8px;
   align-items: center;
+  overflow-x: auto; /* Enable horizontal scrolling */
+  overflow-y: hidden;
+  flex: 1; /* Take remaining space */
+  padding: 4px 0; /* Space for scrollbar */
+  scroll-behavior: smooth; /* Smooth scrolling */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+/* Custom scrollbar for module bar */
+.module-bar-items::-webkit-scrollbar {
+  height: 6px;
+}
+
+.module-bar-items::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.module-bar-items::-webkit-scrollbar-thumb {
+  background: rgba(68, 136, 255, 0.5);
+  border-radius: 3px;
+}
+
+.module-bar-items::-webkit-scrollbar-thumb:hover {
+  background: rgba(68, 136, 255, 0.7);
 }
 
 .module-bar-item {
@@ -1486,6 +1513,8 @@ body {
   white-space: nowrap;
   color: white;
   font-size: 0.9rem;
+  flex-shrink: 0; /* Prevent items from shrinking */
+  min-width: fit-content; /* Maintain minimum width */
 }
 
 .module-bar-item:hover {
@@ -1514,6 +1543,34 @@ body {
   font-weight: bold;
   min-width: 20px;
   text-align: center;
+}
+
+/* Scroll hint for module bar */
+.scroll-hint {
+  position: absolute;
+  right: 25px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(68, 136, 255, 0.9);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  pointer-events: none;
+  animation: pulse 2s ease-in-out infinite;
+  box-shadow: 0 2px 10px rgba(68, 136, 255, 0.5);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translateY(-50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.05);
+  }
 }
 
 /* Mission Report Modal */

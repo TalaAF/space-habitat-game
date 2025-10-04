@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { DragControls } from 'three/examples/jsm/controls/DragControls';
 import { findPath, analyzePath } from '../../utils/pathAnalysis';
+import { createModuleModel } from '../../utils/modelCreators';
 
 const Scene = ({ habitatStructure, modules, onModulePositionUpdate, pathAnalysisMode, onPathAnalysis }) => {
   const containerRef = useRef(null);
@@ -61,9 +62,15 @@ const Scene = ({ habitatStructure, modules, onModulePositionUpdate, pathAnalysis
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
       if (dragControlsRef.current) dragControlsRef.current.dispose();
       controls.dispose();
-      moduleMeshesRef.current.forEach(mesh => {
-        if (mesh.geometry) mesh.geometry.dispose();
-        if (mesh.material) mesh.material.dispose();
+      moduleMeshesRef.current.forEach(moduleGroup => {
+        // Properly dispose of Group objects and all children
+        moduleGroup.traverse(child => {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            if (child.material.map) child.material.map.dispose();
+            child.material.dispose();
+          }
+        });
       });
       if (containerRef.current && renderer.domElement) containerRef.current.removeChild(renderer.domElement);
       renderer.dispose();
@@ -136,11 +143,17 @@ const Scene = ({ habitatStructure, modules, onModulePositionUpdate, pathAnalysis
     const currentIds = new Set(modules.map(m => m.id));
 
     // Remove deleted modules
-    moduleMeshesRef.current.forEach((mesh, id) => {
+    moduleMeshesRef.current.forEach((moduleGroup, id) => {
       if (!currentIds.has(id)) {
-        scene.remove(mesh);
-        if (mesh.geometry) mesh.geometry.dispose();
-        if (mesh.material) mesh.material.dispose();
+        scene.remove(moduleGroup);
+        // Properly dispose of Group and all children
+        moduleGroup.traverse(child => {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            if (child.material.map) child.material.map.dispose();
+            child.material.dispose();
+          }
+        });
         moduleMeshesRef.current.delete(id);
       }
     });
@@ -148,36 +161,62 @@ const Scene = ({ habitatStructure, modules, onModulePositionUpdate, pathAnalysis
     // Add new modules
     modules.forEach(module => {
       if (!moduleMeshesRef.current.has(module.id)) {
-        const mesh = createModule(module);
-        scene.add(mesh);
-        moduleMeshesRef.current.set(module.id, mesh);
+        const moduleGroup = createModule(module);
+        scene.add(moduleGroup);
+        moduleMeshesRef.current.set(module.id, moduleGroup);
         console.log('Added module:', module.id, 'at', module.position);
       } else {
-        const mesh = moduleMeshesRef.current.get(module.id);
-        mesh.position.set(module.position.x, module.position.y, module.position.z);
+        const moduleGroup = moduleMeshesRef.current.get(module.id);
+        moduleGroup.position.set(module.position.x, module.position.y, module.position.z);
       }
     });
 
-    // Setup drag controls
+    // Setup drag controls using invisible helper meshes
     if (dragControlsRef.current) dragControlsRef.current.dispose();
     
-    const objects = Array.from(moduleMeshesRef.current.values());
-    if (objects.length > 0 && cameraRef.current && rendererRef.current) {
-      const drag = new DragControls(objects, cameraRef.current, rendererRef.current.domElement);
+    // Get drag helper meshes from each module group
+    const draggableHelpers = [];
+    moduleMeshesRef.current.forEach((moduleGroup) => {
+      const helper = moduleGroup.children.find(child => child.userData.isDragHelper);
+      if (helper) {
+        draggableHelpers.push(helper);
+      }
+    });
+    
+    if (draggableHelpers.length > 0 && cameraRef.current && rendererRef.current) {
+      const drag = new DragControls(draggableHelpers, cameraRef.current, rendererRef.current.domElement);
       
-      drag.addEventListener('dragstart', () => {
+      drag.addEventListener('dragstart', (e) => {
         if (controlsRef.current) controlsRef.current.enabled = false;
+        // When dragging the helper, actually move the parent group
+        const parentGroup = e.object.userData.parentGroup;
+        if (parentGroup) {
+          parentGroup.userData.isDragging = true;
+        }
       });
       
       drag.addEventListener('drag', (e) => {
-        e.object.position.y = 0.5;
+        // Move the parent group, not just the helper
+        const parentGroup = e.object.userData.parentGroup;
+        if (parentGroup) {
+          parentGroup.position.x = e.object.position.x;
+          parentGroup.position.y = 0.5;
+          parentGroup.position.z = e.object.position.z;
+          // Reset helper's local position
+          e.object.position.set(0, (parentGroup.userData.size || 1.5) / 2, 0);
+        }
       });
       
       drag.addEventListener('dragend', (e) => {
         if (controlsRef.current) controlsRef.current.enabled = true;
         
-        let x = Math.round(e.object.position.x);
-        let z = Math.round(e.object.position.z);
+        const parentGroup = e.object.userData.parentGroup;
+        if (!parentGroup) return;
+        
+        parentGroup.userData.isDragging = false;
+        
+        let x = Math.round(parentGroup.position.x);
+        let z = Math.round(parentGroup.position.z);
         const dist = Math.sqrt(x * x + z * z);
         const maxR = habitatStructure.radius - 1;
         
@@ -188,10 +227,10 @@ const Scene = ({ habitatStructure, modules, onModulePositionUpdate, pathAnalysis
         }
         
         const pos = { x, y: 0.5, z };
-        e.object.position.set(pos.x, pos.y, pos.z);
+        parentGroup.position.set(pos.x, pos.y, pos.z);
         
         if (onModulePositionUpdate) {
-          onModulePositionUpdate(e.object.userData.moduleId, pos);
+          onModulePositionUpdate(parentGroup.userData.moduleId, pos);
         }
       });
       
@@ -200,24 +239,42 @@ const Scene = ({ habitatStructure, modules, onModulePositionUpdate, pathAnalysis
   }, [modules, habitatStructure, onModulePositionUpdate]);
 
   const createModule = (module) => {
-    const types = {
-      living: { geo: new THREE.BoxGeometry(1, 1, 1), color: 0xff6644 },
-      lab: { geo: new THREE.CylinderGeometry(0.5, 0.5, 1, 8), color: 0x44ff88 },
-      power: { geo: new THREE.BoxGeometry(0.8, 1.2, 0.8), color: 0xffff44 },
-      greenhouse: { geo: new THREE.SphereGeometry(0.6, 16, 16), color: 0x44ff44 },
-      medical: { geo: new THREE.BoxGeometry(1.2, 1, 1.2), color: 0xff4488 },
-      airlock: { geo: new THREE.CylinderGeometry(0.4, 0.4, 0.8, 6), color: 0x4444ff },
-      storage: { geo: new THREE.BoxGeometry(1.2, 0.8, 1.2), color: 0x8844ff }
-    };
+    // Create detailed 3D model using NASA-inspired geometries
+    const moduleGroup = createModuleModel(module.type, {
+      id: module.id,
+      type: module.type,
+      moduleId: module.id,
+      size: module.size || 1.5,
+      mass: module.mass,
+      power: module.power,
+      lifeSupport: module.lifeSupport,
+      tags: module.tags
+    });
     
-    const spec = types[module.type] || { geo: new THREE.BoxGeometry(1, 1, 1), color: 0x888888 };
-    const mesh = new THREE.Mesh(spec.geo, new THREE.MeshStandardMaterial({ color: spec.color }));
-    mesh.position.set(module.position.x, module.position.y, module.position.z);
-    mesh.userData.moduleId = module.id;
-    mesh.userData.size = 1.5; // Size for collision detection
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    return mesh;
+    // Set position
+    moduleGroup.position.set(module.position.x, module.position.y, module.position.z);
+    
+    // Apply scale if needed (models are designed at 1:1 scale)
+    const scale = (module.size || 1.5) / 1.5;
+    moduleGroup.scale.set(scale, scale, scale);
+    
+    // Add invisible bounding box mesh for drag detection
+    // This ensures DragControls can raycast and detect the entire model
+    const size = module.size || 1.5;
+    const dragHelper = new THREE.Mesh(
+      new THREE.BoxGeometry(size, size, size),
+      new THREE.MeshBasicMaterial({ 
+        visible: false // Invisible but still detectable by raycaster
+      })
+    );
+    dragHelper.position.y = size / 2; // Center at model height
+    dragHelper.userData.isDragHelper = true;
+    moduleGroup.add(dragHelper);
+    
+    // Store reference to parent group in drag helper
+    dragHelper.userData.parentGroup = moduleGroup;
+    
+    return moduleGroup;
   };
 
   // Path Analysis Mode - Click handling
