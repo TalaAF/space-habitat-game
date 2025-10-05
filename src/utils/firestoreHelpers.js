@@ -1,5 +1,5 @@
 // src/utils/firestoreHelpers.js
-import { collection, addDoc, getDocs, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp } from 'firebase/firestore';
 import { db, isConfigured, USE_MOCK_DB } from '../firebase';
 
 /**
@@ -129,18 +129,20 @@ export async function fetchAllDesigns() {
   try {
     // Use mock database or real Firestore
     if (USE_MOCK_DB) {
-      // Mock database - return from memory
-      console.log(`📊 Fetched ${mockDesigns.length} designs from MOCK database`);
+      // Mock database - return from memory (limited to 50)
+      const limitedDesigns = mockDesigns.slice(0, 50);
+      console.log(`📊 Fetched ${limitedDesigns.length} designs from MOCK database (limit: 50)`);
       
       // Simulate network delay for realism
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      return [...mockDesigns]; // Return a copy
+      return [...limitedDesigns]; // Return a copy
     } else {
       // Real Firestore
       const designsQuery = query(
         collection(db, 'public_designs'),
-        orderBy('createdAt', 'desc')
+        orderBy('createdAt', 'desc'),
+        limit(50)
       );
       
       const querySnapshot = await getDocs(designsQuery);
@@ -153,7 +155,7 @@ export async function fetchAllDesigns() {
         });
       });
       
-      console.log(`✅ Fetched ${designs.length} designs from Firestore`);
+      console.log(`✅ Fetched ${designs.length} designs from Firestore (limit: 50)`);
       return designs;
     }
   } catch (error) {
