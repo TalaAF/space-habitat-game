@@ -50,7 +50,10 @@ const Scene = forwardRef(({ habitatStructure, modules, onModulePositionUpdate, p
     camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: true,
+      preserveDrawingBuffer: true // Required for screenshot capture
+    });
     renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
     renderer.shadowMap.enabled = true;
     containerRef.current.appendChild(renderer.domElement);

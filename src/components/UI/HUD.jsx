@@ -1,6 +1,6 @@
 import React from 'react';
 
-const HUD = ({ moduleCount, onEndGame, onExport }) => {
+const HUD = ({ moduleCount, onEndGame, onExport, onPublish }) => {
   return (
     <div className="hud">
       <div className="hud-left">
@@ -15,6 +15,9 @@ const HUD = ({ moduleCount, onEndGame, onExport }) => {
         </div>
       </div>
       <div className="hud-right">
+        <button className="publish-btn" onClick={onPublish}>
+          🌐 Publish to Community
+        </button>
         <button className="export-btn" onClick={onExport}>
           📥 Export Design
         </button>

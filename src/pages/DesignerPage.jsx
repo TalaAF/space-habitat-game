@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import HUD from '../components/UI/HUD.jsx';
 import DesignPanel from '../components/UI/DesignPanel.jsx';
 import ModuleBar from '../components/UI/ModuleBar.jsx';
@@ -9,12 +10,15 @@ import ValidationModal from '../components/UI/ValidationModal.jsx';
 import MissionReportModal from '../components/UI/MissionReportModal.jsx';
 import PathAnalysisPanel from '../components/UI/PathAnalysisPanel.jsx';
 import ExportMenu from '../components/UI/ExportMenu.jsx';
+import PublishModal from '../components/UI/PublishModal.jsx';
 import { useGameState } from '../hooks/useGameState.js';
 import { useHabitatDesign } from '../hooks/useHabitatDesign.js';
 import { validateMissionLayout, analyzeMissionReadiness } from '../utils/missionValidation.js';
+import { publishDesign, validateDesignData, generateThumbnail } from '../utils/firestoreHelpers.js';
 import '../styles/index.css';
 
 const DesignerPage = () => {
+  const navigate = useNavigate();
   const { gameState, startGame, endGame, updateScore } = useGameState();
   const { 
     habitatStructure, 
@@ -42,6 +46,8 @@ const DesignerPage = () => {
   const [pathModules, setPathModules] = useState({ start: null, end: null });
   const [isModuleSelected, setIsModuleSelected] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [publishModalOpen, setPublishModalOpen] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const sceneRef = useRef(null);
 
   if (!gameState.isRunning) {
@@ -93,12 +99,95 @@ const DesignerPage = () => {
     setPathAnalysis(result);
   };
 
+  const handlePublishClick = () => {
+    // Validate that there are modules before allowing publish
+    if (modules.length === 0) {
+      alert('❌ Cannot publish an empty design. Please add at least one module.');
+      return;
+    }
+    setPublishModalOpen(true);
+  };
+
+  const handlePublish = async (designName, creatorName) => {
+    setIsPublishing(true);
+
+    try {
+      // Step A: Capture Visual Thumbnail
+      console.log('Capturing thumbnail from renderer...');
+      const renderer = sceneRef.current?.renderer;
+      
+      if (!renderer) {
+        throw new Error('Renderer not available. Please try again.');
+      }
+
+      const thumbnail = generateThumbnail(renderer);
+      
+      if (!thumbnail) {
+        throw new Error('Failed to capture thumbnail. Please try again.');
+      }
+
+      // Step B: Package the Design Data
+      console.log('Packaging design data...');
+      const designData = {
+        designName,
+        creatorName,
+        thumbnail,
+        missionParams: {
+          crewSize: missionParams.crewSize,
+          destination: missionParams.destination,
+          duration: missionParams.duration,
+          constructionType: missionParams.constructionType
+        },
+        // Sanitized modules array - only essential data
+        modules: modules.map(module => ({
+          type: module.type,
+          position: {
+            x: module.position.x,
+            y: module.position.y,
+            z: module.position.z
+          }
+        }))
+        // createdAt will be added automatically by publishDesign using serverTimestamp()
+      };
+
+      // Validate the data
+      const validation = validateDesignData(designData);
+      if (!validation.valid) {
+        throw new Error(validation.errors.join('\n'));
+      }
+
+      // Step C: Write to Firestore
+      console.log('Publishing to Firestore...');
+      const designId = await publishDesign(designData);
+      
+      console.log('Design published successfully with ID:', designId);
+
+      // Step D: Success Feedback
+      setPublishModalOpen(false);
+      setIsPublishing(false);
+      
+      // Show success message
+      alert('✅ Your design has been successfully published to the Community Hub!');
+      
+      // Navigate to Community Hub
+      navigate('/hub');
+      
+    } catch (error) {
+      console.error('Error publishing design:', error);
+      setIsPublishing(false);
+      
+      // User-friendly error message
+      alert(`❌ Failed to publish design:\n\n${error.message}\n\nPlease check your internet connection and Firebase configuration, then try again.`);
+    }
+  };
+
   return (
     <div className="app">
       <HUD 
         moduleCount={modules.length}
         onEndGame={endGame}
         onExport={() => setExportMenuOpen(true)}
+        onPublish={handlePublishClick}
       />
       <div className="game-container">
         <div className="scene-wrapper">
@@ -173,6 +262,12 @@ const DesignerPage = () => {
         sceneRef={sceneRef}
         isOpen={exportMenuOpen}
         onClose={() => setExportMenuOpen(false)}
+      />
+      <PublishModal
+        isOpen={publishModalOpen}
+        onClose={() => setPublishModalOpen(false)}
+        onPublish={handlePublish}
+        isLoading={isPublishing}
       />
     </div>
   );

@@ -209,6 +209,26 @@ body {
   box-shadow: 0 4px 12px rgba(68, 255, 136, 0.3);
 }
 
+/* Publish Button */
+.publish-btn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: 2px solid #a78bfa;
+  border-radius: 8px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.publish-btn:hover {
+  background: linear-gradient(135deg, #7788ff 0%, #8855cc 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(167, 139, 250, 0.4);
+}
+
 /* Game Container */
 .game-container {
   flex: 1;

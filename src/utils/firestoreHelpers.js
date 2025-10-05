@@ -1,13 +1,29 @@
 // src/utils/firestoreHelpers.js
 import { collection, addDoc, getDocs, query, orderBy, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, isConfigured, USE_MOCK_DB } from '../firebase';
 
 /**
  * Firestore Helper Functions for Community Platform
  * 
  * These functions handle all interactions with the Firestore database
  * for the public_designs collection.
+ * 
+ * In development mode (without Firebase), uses an in-memory mock database.
  */
+
+// Mock database - stored in browser memory
+let mockDesigns = [];
+let mockIdCounter = 1;
+
+// Helper to generate mock document ID
+function generateMockId() {
+  return `mock_design_${mockIdCounter++}`;
+}
+
+// Helper to create mock timestamp
+function createMockTimestamp() {
+  return new Date().toISOString();
+}
 
 /**
  * Publishes a habitat design to the community
@@ -48,7 +64,7 @@ export async function publishDesign(designData) {
       throw new Error('At least one module is required');
     }
 
-    // Create the document with server timestamp
+    // Create the document
     const designDoc = {
       designName: designData.designName,
       creatorName: designData.creatorName,
@@ -66,16 +82,33 @@ export async function publishDesign(designData) {
           y: module.position.y,
           z: module.position.z
         }
-      })),
-      createdAt: serverTimestamp()
+      }))
     };
 
-    // Add to Firestore
-    const docRef = await addDoc(collection(db, 'public_designs'), designDoc);
-    console.log('Design published successfully with ID:', docRef.id);
-    return docRef.id;
+    // Use mock database or real Firestore
+    if (USE_MOCK_DB) {
+      // Mock database - store in memory
+      const mockId = generateMockId();
+      const mockDoc = {
+        id: mockId,
+        ...designDoc,
+        createdAt: createMockTimestamp()
+      };
+      
+      mockDesigns.unshift(mockDoc); // Add to beginning (newest first)
+      console.log('✅ Design published to MOCK database with ID:', mockId);
+      console.log('📊 Total designs in mock database:', mockDesigns.length);
+      console.log('🔍 View all designs at /hub');
+      return mockId;
+    } else {
+      // Real Firestore
+      designDoc.createdAt = serverTimestamp();
+      const docRef = await addDoc(collection(db, 'public_designs'), designDoc);
+      console.log('✅ Design published to Firestore with ID:', docRef.id);
+      return docRef.id;
+    }
   } catch (error) {
-    console.error('Error publishing design:', error);
+    console.error('❌ Error publishing design:', error);
     throw error;
   }
 }
@@ -94,25 +127,37 @@ export async function publishDesign(designData) {
  */
 export async function fetchAllDesigns() {
   try {
-    const designsQuery = query(
-      collection(db, 'public_designs'),
-      orderBy('createdAt', 'desc')
-    );
-    
-    const querySnapshot = await getDocs(designsQuery);
-    const designs = [];
-    
-    querySnapshot.forEach((doc) => {
-      designs.push({
-        id: doc.id,
-        ...doc.data()
+    // Use mock database or real Firestore
+    if (USE_MOCK_DB) {
+      // Mock database - return from memory
+      console.log(`📊 Fetched ${mockDesigns.length} designs from MOCK database`);
+      
+      // Simulate network delay for realism
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      return [...mockDesigns]; // Return a copy
+    } else {
+      // Real Firestore
+      const designsQuery = query(
+        collection(db, 'public_designs'),
+        orderBy('createdAt', 'desc')
+      );
+      
+      const querySnapshot = await getDocs(designsQuery);
+      const designs = [];
+      
+      querySnapshot.forEach((doc) => {
+        designs.push({
+          id: doc.id,
+          ...doc.data()
+        });
       });
-    });
-    
-    console.log(`Fetched ${designs.length} designs from community`);
-    return designs;
+      
+      console.log(`✅ Fetched ${designs.length} designs from Firestore`);
+      return designs;
+    }
   } catch (error) {
-    console.error('Error fetching designs:', error);
+    console.error('❌ Error fetching designs:', error);
     throw error;
   }
 }
@@ -129,32 +174,68 @@ export async function fetchAllDesigns() {
 export async function fetchDesignsByDestination(destination) {
   try {
     const designs = await fetchAllDesigns();
-    return designs.filter(design => 
+    const filtered = designs.filter(design => 
       design.missionParams?.destination === destination
     );
+    console.log(`🔍 Filtered to ${filtered.length} ${destination} designs`);
+    return filtered;
   } catch (error) {
-    console.error('Error fetching designs by destination:', error);
+    console.error('❌ Error fetching designs by destination:', error);
     throw error;
   }
 }
 
 /**
+ * Clear all mock designs (for testing purposes)
+ * Only works with mock database
+ */
+export function clearMockDesigns() {
+  if (USE_MOCK_DB) {
+    mockDesigns = [];
+    mockIdCounter = 1;
+    console.log('🗑️ Mock database cleared');
+  }
+}
+
+/**
+ * Get mock designs count (for testing purposes)
+ * Only works with mock database
+ */
+export function getMockDesignsCount() {
+  if (USE_MOCK_DB) {
+    return mockDesigns.length;
+  }
+  return 0;
+}
+
+/**
  * Generates a thumbnail from the current 3D scene
- * This is a placeholder - actual implementation will use Three.js renderer
+ * Captures the current canvas view and converts it to a Base64 JPEG
  * 
- * @param {Object} renderer - Three.js WebGLRenderer
- * @returns {string} - Base64 encoded JPEG
+ * @param {Object} renderer - Three.js WebGLRenderer instance
+ * @returns {string} - Base64 encoded JPEG (quality 0.5 for optimal size)
  * 
  * @example
- * const thumbnail = generateThumbnail(sceneRef.current.renderer);
+ * const thumbnail = generateThumbnail(rendererRef.current);
  */
 export function generateThumbnail(renderer) {
-  // TODO: Implement in Phase 2
-  // This will capture the current frame from the Three.js renderer
-  // and convert it to a Base64 JPEG string
-  
-  // Placeholder implementation
-  return 'data:image/jpeg;base64,placeholder';
+  try {
+    if (!renderer || !renderer.domElement) {
+      console.warn('No valid renderer provided for thumbnail generation');
+      return '';
+    }
+
+    // Capture the current canvas as a Base64 JPEG
+    // Quality 0.5 provides good balance between image quality and file size
+    const dataURL = renderer.domElement.toDataURL('image/jpeg', 0.5);
+    
+    console.log('Thumbnail generated successfully');
+    return dataURL;
+  } catch (error) {
+    console.error('Error generating thumbnail:', error);
+    console.error('Make sure renderer was initialized with { preserveDrawingBuffer: true }');
+    return '';
+  }
 }
 
 /**

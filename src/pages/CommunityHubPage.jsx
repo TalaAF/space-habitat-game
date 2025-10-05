@@ -1,20 +1,14 @@
 // src/pages/CommunityHubPage.jsx
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { fetchAllDesigns } from '../utils/firestoreHelpers';
 import '../styles/index.css';
 
 /**
  * CommunityHubPage - Community Design Gallery
  * 
- * This page will display all publicly shared habitat designs from the Firestore database.
- * Users will be able to browse, filter, and view detailed information about community designs.
- * 
- * Future features to be implemented:
- * - Grid gallery of design thumbnails
- * - Filtering by mission parameters (destination, crew size, etc.)
- * - Design detail modal
- * - Like/favorite functionality
- * - Search capability
+ * Displays all publicly shared habitat designs from Firestore (or mock database).
+ * Users can browse designs with thumbnails and mission information.
  */
 const CommunityHubPage = () => {
   const [designs, setDesigns] = useState([]);
@@ -22,14 +16,21 @@ const CommunityHubPage = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // TODO: Fetch designs from Firestore in the next phase
-    // For now, just simulate loading
-    const timer = setTimeout(() => {
-      setLoading(false);
-      setDesigns([]); // Empty array for now
-    }, 500);
+    const loadDesigns = async () => {
+      try {
+        setLoading(true);
+        const fetchedDesigns = await fetchAllDesigns();
+        setDesigns(fetchedDesigns);
+        setError(null);
+      } catch (err) {
+        console.error('Error loading designs:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    return () => clearTimeout(timer);
+    loadDesigns();
   }, []);
 
   return (
@@ -142,19 +143,129 @@ const CommunityHubPage = () => {
         ) : (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
             gap: '2rem',
             padding: '1rem'
           }}>
             {designs.map((design) => (
               <div key={design.id} style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: '12px',
-                padding: '1rem',
-                border: '1px solid rgba(255, 255, 255, 0.1)'
-              }}>
-                {/* Design card content will be implemented in the next phase */}
-                <p>{design.designName}</p>
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                transition: 'transform 0.3s, box-shadow 0.3s',
+                cursor: 'pointer'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 12px 32px rgba(102, 126, 234, 0.3)';
+                e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.4)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+              }}
+              >
+                {/* Thumbnail */}
+                {design.thumbnail && (
+                  <div style={{
+                    width: '100%',
+                    height: '200px',
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden'
+                  }}>
+                    <img 
+                      src={design.thumbnail} 
+                      alt={design.designName}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                  </div>
+                )}
+                
+                {/* Content */}
+                <div style={{ padding: '1.25rem' }}>
+                  {/* Design Name */}
+                  <h3 style={{
+                    fontSize: '1.25rem',
+                    fontWeight: 'bold',
+                    margin: '0 0 0.5rem 0',
+                    color: '#ffffff'
+                  }}>
+                    {design.designName}
+                  </h3>
+                  
+                  {/* Creator */}
+                  <p style={{
+                    fontSize: '0.9rem',
+                    color: 'rgba(255, 255, 255, 0.6)',
+                    margin: '0 0 1rem 0'
+                  }}>
+                    by <span style={{ color: '#4a9eff' }}>{design.creatorName}</span>
+                  </p>
+                  
+                  {/* Mission Info */}
+                  <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '0.5rem',
+                    marginBottom: '1rem'
+                  }}>
+                    <span style={{
+                      padding: '0.35rem 0.75rem',
+                      background: 'rgba(74, 158, 255, 0.2)',
+                      border: '1px solid rgba(74, 158, 255, 0.4)',
+                      borderRadius: '6px',
+                      fontSize: '0.8rem',
+                      color: '#4a9eff',
+                      textTransform: 'capitalize'
+                    }}>
+                      🌍 {design.missionParams?.destination || 'Unknown'}
+                    </span>
+                    <span style={{
+                      padding: '0.35rem 0.75rem',
+                      background: 'rgba(139, 92, 246, 0.2)',
+                      border: '1px solid rgba(139, 92, 246, 0.4)',
+                      borderRadius: '6px',
+                      fontSize: '0.8rem',
+                      color: '#a78bfa'
+                    }}>
+                      👥 {design.missionParams?.crewSize || 0} Crew
+                    </span>
+                    <span style={{
+                      padding: '0.35rem 0.75rem',
+                      background: 'rgba(59, 130, 246, 0.2)',
+                      border: '1px solid rgba(59, 130, 246, 0.4)',
+                      borderRadius: '6px',
+                      fontSize: '0.8rem',
+                      color: '#60a5fa'
+                    }}>
+                      🏗️ {design.modules?.length || 0} Modules
+                    </span>
+                  </div>
+                  
+                  {/* Date */}
+                  {design.createdAt && (
+                    <p style={{
+                      fontSize: '0.75rem',
+                      color: 'rgba(255, 255, 255, 0.4)',
+                      margin: 0
+                    }}>
+                      {new Date(design.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  )}
+                </div>
               </div>
             ))}
           </div>
