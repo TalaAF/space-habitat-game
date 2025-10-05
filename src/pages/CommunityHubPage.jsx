@@ -5,6 +5,7 @@ import { useAppContext } from '../contexts/AppContext.jsx';
 import { fetchAllDesigns } from '../utils/firestoreHelpers';
 import Navigation from '../components/UI/Navigation';
 import DesignCard from '../components/UI/DesignCard';
+import AIAssistant from '../components/UI/AIAssistant';
 import '../styles/index.css';
 
 /**
@@ -19,6 +20,7 @@ const CommunityHubPage = () => {
   const [designs, setDesigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
 
   useEffect(() => {
     const loadDesigns = async () => {
@@ -180,6 +182,19 @@ const CommunityHubPage = () => {
           Gallery features coming in Phase 2
         </p>
       </footer>
+
+      {!aiAssistantOpen && (
+        <button
+          className="ai-assistant-fab"
+          onClick={() => setAiAssistantOpen(true)}
+          title="AI Assistant - Ask me anything about space habitats!"
+        >
+          🤖
+        </button>
+      )}
+      {aiAssistantOpen && (
+        <AIAssistant onClose={() => setAiAssistantOpen(false)} />
+      )}
     </div>
   );
 };

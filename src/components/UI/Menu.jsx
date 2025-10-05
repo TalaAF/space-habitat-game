@@ -1,25 +1,10 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import Navigation from './Navigation';
 
 const Menu = ({ onStart }) => {
   return (
     <div className="menu-screen">
-      {/* Simple Navigation */}
-      <nav style={{
-        position: 'fixed',
-        top: '10px',
-        left: '10px',
-        zIndex: 1000,
-        display: 'flex',
-        gap: '1rem',
-        fontSize: '0.9rem'
-      }}>
-        <Link to="/" style={{ color: 'rgba(255, 255, 255, 0.8)', textDecoration: 'none' }}>Home</Link>
-        <span style={{ color: 'rgba(255, 255, 255, 0.4)' }}>|</span>
-        <Link to="/designer" style={{ color: 'rgba(255, 255, 255, 0.8)', textDecoration: 'none' }}>Designer</Link>
-        <span style={{ color: 'rgba(255, 255, 255, 0.4)' }}>|</span>
-        <Link to="/hub" style={{ color: 'rgba(255, 255, 255, 0.8)', textDecoration: 'none' }}>Hub</Link>
-      </nav>
+      <Navigation />
 
       <div className="menu-content">
         <h1 className="game-title">🚀 Space Habitat Builder</h1>

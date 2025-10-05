@@ -83,9 +83,7 @@ const AIAssistant = ({ onClose }) => {
   const quickQuestions = [
     'How do I protect against radiation?',
     'What makes a good crew quarter?',
-    'Why is water recycling important?',
-    'Compare rigid vs inflatable modules',
-    'How much power does a Mars habitat need?'
+    'Compare rigid vs inflatable modules'
   ];
 
   const handleQuickQuestion = (question) => {
@@ -119,13 +117,6 @@ const AIAssistant = ({ onClose }) => {
             title="Clear chat"
           >
             🗑️
-          </button>
-          <button 
-            className="ai-header-btn" 
-            onClick={() => setIsMinimized(true)}
-            title="Minimize"
-          >
-            ─
           </button>
           <button 
             className="ai-header-btn ai-close-btn" 
