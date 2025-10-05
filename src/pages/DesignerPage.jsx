@@ -1,5 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppContext } from '../contexts/AppContext.jsx';
+import Navigation from '../components/UI/Navigation';
 import HUD from '../components/UI/HUD.jsx';
 import DesignPanel from '../components/UI/DesignPanel.jsx';
 import ModuleBar from '../components/UI/ModuleBar.jsx';
@@ -19,17 +21,20 @@ import '../styles/index.css';
 
 const DesignerPage = () => {
   const navigate = useNavigate();
+  const { designToLoad, clearDesignToLoad } = useAppContext();
   const { gameState, startGame, endGame, updateScore } = useGameState();
   const { 
     habitatStructure, 
     modules,
+    setModules,
     currentFloor,
     setCurrentFloor,
     updateHabitatStructure,
     updateFloorShape,
     addModule,
     updateModulePosition,
-    removeModule 
+    removeModule,
+    clearModules 
   } = useHabitatDesign();
 
   const [missionParams, setMissionParams] = useState({
@@ -49,6 +54,90 @@ const DesignerPage = () => {
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const sceneRef = useRef(null);
+  const hasLoadedDesign = useRef(false); // Track if we've loaded a cloned design
+
+  /**
+   * Clone & Explore Feature - Load Design from Community Hub
+   * 
+   * This effect runs when a user clicks "Clone & Explore" on a design
+   * in the Community Hub. It performs a complete state reset and loads
+   * the cloned design into the editor.
+   */
+  useEffect(() => {
+    if (designToLoad && !hasLoadedDesign.current) {
+      console.log('🎨 Loading cloned design:', designToLoad.designName);
+      console.log('📦 Design data:', designToLoad);
+      
+      // Mark that we're loading to prevent double-execution
+      hasLoadedDesign.current = true;
+
+      try {
+        // Step 0: Ensure game is started so designer UI is visible
+        if (!gameState.isRunning) {
+          console.log('🎮 Starting game state for cloned design...');
+          startGame();
+        }
+
+        // Step 1: Clear existing state
+        console.log('🧹 Clearing current design state...');
+        clearModules();
+        setValidationResults(null);
+        setMissionReport(null);
+        setPathAnalysis(null);
+        setPathAnalysisMode(false);
+
+        // Step 2: Load mission parameters
+        if (designToLoad.missionParams) {
+          console.log('🎯 Loading mission parameters:', designToLoad.missionParams);
+          setMissionParams({
+            crewSize: designToLoad.missionParams.crewSize || 4,
+            destination: designToLoad.missionParams.destination || 'lunar',
+            duration: designToLoad.missionParams.duration || 'short',
+            constructionType: designToLoad.missionParams.constructionType || 'rigid'
+          });
+        }
+
+        // Step 3: Load modules with new unique IDs
+        if (designToLoad.modules && Array.isArray(designToLoad.modules)) {
+          console.log(`📦 Loading ${designToLoad.modules.length} modules...`);
+          console.log('📦 Raw module data from design:', designToLoad.modules);
+          
+          // Create new modules with fresh unique IDs but preserve all other data
+          const loadedModules = designToLoad.modules.map((moduleData, index) => {
+            const newModule = {
+              ...moduleData,
+              id: Date.now() + Math.random() + index, // Generate new unique ID
+              type: moduleData.type,
+              position: moduleData.position || { x: 0, y: 0, z: 0 },
+              rotation: moduleData.rotation || { x: 0, y: 0, z: 0 },
+              scale: moduleData.scale || 1,
+              floor: moduleData.floor || 0
+            };
+            console.log(`  ✅ Module ${index + 1}: ${newModule.type} at position:`, newModule.position, `(floor ${newModule.floor})`);
+            return newModule;
+          });
+
+          // Set all modules at once
+          setModules(loadedModules);
+
+          console.log('✅ Design loaded successfully!');
+          console.log(`📊 Total modules loaded: ${loadedModules.length}`);
+        }
+
+        // Step 4: Clear the designToLoad state to prevent re-loading
+        clearDesignToLoad();
+
+      } catch (error) {
+        console.error('❌ Error loading cloned design:', error);
+        alert('Failed to load design. Please try again.');
+        clearDesignToLoad();
+        hasLoadedDesign.current = false; // Reset on error
+      }
+    } else if (!designToLoad && hasLoadedDesign.current) {
+      // Reset the flag when designToLoad is cleared (for next clone)
+      hasLoadedDesign.current = false;
+    }
+  }, [designToLoad, clearDesignToLoad, clearModules, setModules, gameState.isRunning, startGame]);
 
   if (!gameState.isRunning) {
     return <Menu onStart={startGame} />;
@@ -85,6 +174,11 @@ const DesignerPage = () => {
 
   const handleCloseMissionReport = () => {
     setMissionReport(null);
+  };
+
+  const handleEndGame = () => {
+    endGame();
+    navigate('/');
   };
 
   const handleTogglePathAnalysis = () => {
@@ -128,6 +222,7 @@ const DesignerPage = () => {
 
       // Step B: Package the Design Data
       console.log('Packaging design data...');
+      console.log('📦 Current modules before publishing:', modules);
       const designData = {
         designName,
         creatorName,
@@ -138,15 +233,21 @@ const DesignerPage = () => {
           duration: missionParams.duration,
           constructionType: missionParams.constructionType
         },
-        // Sanitized modules array - only essential data
-        modules: modules.map(module => ({
-          type: module.type,
-          position: {
-            x: module.position.x,
-            y: module.position.y,
-            z: module.position.z
-          }
-        }))
+        // Complete modules array - all data needed for cloning
+        modules: modules.map(module => {
+          console.log(`  📍 Publishing module ${module.type} at position:`, module.position);
+          return {
+            type: module.type,
+            position: {
+              x: module.position.x,
+              y: module.position.y,
+              z: module.position.z
+            },
+            rotation: module.rotation || { x: 0, y: 0, z: 0 },
+            scale: module.scale || 1,
+            floor: module.floor || 0
+          };
+        })
         // createdAt will be added automatically by publishDesign using serverTimestamp()
       };
 
@@ -185,7 +286,7 @@ const DesignerPage = () => {
     <div className="app">
       <HUD 
         moduleCount={modules.length}
-        onEndGame={endGame}
+        onEndGame={handleEndGame}
         onExport={() => setExportMenuOpen(true)}
         onPublish={handlePublishClick}
       />

@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import Navigation from '../components/UI/Navigation';
 import KnowledgeTest from '../components/UI/KnowledgeTest';
 import '../styles/landing.css';
 
@@ -716,6 +717,8 @@ const LandingPage = () => {
           </div>
         </section>
       </div>
+      
+      <Navigation />
     </div>
   );
 };

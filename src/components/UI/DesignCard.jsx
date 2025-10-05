@@ -34,10 +34,10 @@ const DesignCard = ({ design, onCloneExplore }) => {
     <div 
       className="design-card"
       style={{
-        background: 'linear-gradient(135deg, rgba(26, 31, 58, 0.95) 0%, rgba(45, 27, 78, 0.9) 100%)',
+        background: 'linear-gradient(135deg, rgba(26, 31, 58, 0.95) 0%, rgba(20, 35, 65, 0.9) 100%)',
         borderRadius: '16px',
         overflow: 'hidden',
-        border: '1px solid rgba(102, 126, 234, 0.2)',
+        border: '1px solid rgba(77, 127, 204, 0.3)',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         cursor: 'pointer',
         position: 'relative',
@@ -45,13 +45,13 @@ const DesignCard = ({ design, onCloneExplore }) => {
       }}
       onMouseOver={(e) => {
         e.currentTarget.style.transform = 'translateY(-12px)';
-        e.currentTarget.style.boxShadow = '0 20px 40px rgba(102, 126, 234, 0.4)';
-        e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.6)';
+        e.currentTarget.style.boxShadow = '0 20px 40px rgba(77, 127, 204, 0.4)';
+        e.currentTarget.style.borderColor = 'rgba(107, 157, 255, 0.6)';
       }}
       onMouseOut={(e) => {
         e.currentTarget.style.transform = 'translateY(0)';
         e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.3)';
-        e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.2)';
+        e.currentTarget.style.borderColor = 'rgba(77, 127, 204, 0.3)';
       }}
     >
       {/* Thumbnail Header */}
@@ -64,7 +64,7 @@ const DesignCard = ({ design, onCloneExplore }) => {
         justifyContent: 'center',
         overflow: 'hidden',
         position: 'relative',
-        borderBottom: '2px solid rgba(102, 126, 234, 0.3)'
+        borderBottom: '2px solid rgba(77, 127, 204, 0.4)'
       }}>
         {design.thumbnail ? (
           <>
@@ -133,7 +133,7 @@ const DesignCard = ({ design, onCloneExplore }) => {
         }}>
           <span style={{ opacity: 0.7 }}>by</span>
           <span style={{ 
-            color: '#4a9eff',
+            color: '#6b9dff',
             fontWeight: '600'
           }}>
             {design.creatorName}
@@ -250,7 +250,7 @@ const DesignCard = ({ design, onCloneExplore }) => {
           style={{
             width: '100%',
             padding: '0.85rem 1.5rem',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: 'linear-gradient(135deg, #4d7fcc 0%, #6b9dff 100%)',
             border: 'none',
             borderRadius: '10px',
             color: 'white',
@@ -258,7 +258,7 @@ const DesignCard = ({ design, onCloneExplore }) => {
             fontWeight: 'bold',
             cursor: 'pointer',
             transition: 'all 0.2s',
-            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+            boxShadow: '0 4px 15px rgba(77, 127, 204, 0.3)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -266,11 +266,11 @@ const DesignCard = ({ design, onCloneExplore }) => {
           }}
           onMouseOver={(e) => {
             e.target.style.transform = 'scale(1.02)';
-            e.target.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.5)';
+            e.target.style.boxShadow = '0 6px 20px rgba(77, 127, 204, 0.5)';
           }}
           onMouseOut={(e) => {
             e.target.style.transform = 'scale(1)';
-            e.target.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.3)';
+            e.target.style.boxShadow = '0 4px 15px rgba(77, 127, 204, 0.3)';
           }}
         >
           <span>🔍</span>

@@ -1,6 +1,7 @@
 // src/utils/firestoreHelpers.js
 import { collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp } from 'firebase/firestore';
 import { db, isConfigured, USE_MOCK_DB } from '../firebase';
+import { sampleDesigns } from '../data/sampleDesigns';
 
 /**
  * Firestore Helper Functions for Community Platform
@@ -8,12 +9,13 @@ import { db, isConfigured, USE_MOCK_DB } from '../firebase';
  * These functions handle all interactions with the Firestore database
  * for the public_designs collection.
  * 
- * In development mode (without Firebase), uses an in-memory mock database.
+ * In development mode (without Firebase), uses an in-memory mock database
+ * pre-populated with sample designs.
  */
 
-// Mock database - stored in browser memory
-let mockDesigns = [];
-let mockIdCounter = 1;
+// Mock database - stored in browser memory, pre-populated with sample designs
+let mockDesigns = [...sampleDesigns];
+let mockIdCounter = sampleDesigns.length + 1;
 
 // Helper to generate mock document ID
 function generateMockId() {
@@ -78,10 +80,13 @@ export async function publishDesign(designData) {
       modules: designData.modules.map(module => ({
         type: module.type,
         position: {
-          x: module.position.x,
-          y: module.position.y,
-          z: module.position.z
-        }
+          x: module.position?.x || 0,
+          y: module.position?.y || 0,
+          z: module.position?.z || 0
+        },
+        rotation: module.rotation || { x: 0, y: 0, z: 0 },
+        scale: module.scale || 1,
+        floor: module.floor || 0
       }))
     };
 

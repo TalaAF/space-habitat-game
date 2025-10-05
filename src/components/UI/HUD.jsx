@@ -21,7 +21,7 @@ const HUD = ({ moduleCount, onEndGame, onExport, onPublish }) => {
         <button className="export-btn" onClick={onExport}>
           📥 Export Design
         </button>
-        <button className="btn-secondary" onClick={onEndGame}>End Game</button>
+        <button className="btn-secondary" onClick={onEndGame}>Return to Home</button>
       </div>
     </div>
   );

@@ -430,12 +430,30 @@ const Scene = forwardRef(({ habitatStructure, modules, onModulePositionUpdate, p
     modules.forEach(module => {
       if (!moduleMeshesRef.current.has(module.id)) {
         const moduleGroup = createModule(module);
+        
+        // CRITICAL: Set floor in userData so opacity control works
+        moduleGroup.userData.floor = module.floor || 0;
+        
+        // Set initial opacity based on current floor
+        const isOnCurrentFloor = (module.floor || 0) === currentFloor;
+        const opacity = isOnCurrentFloor ? 1.0 : 0.2;
+        moduleGroup.traverse((child) => {
+          if (child.isMesh && child.material && !child.userData.isDragHelper) {
+            child.material.transparent = true;
+            child.material.opacity = opacity;
+            child.material.needsUpdate = true;
+          }
+        });
+        
         scene.add(moduleGroup);
         moduleMeshesRef.current.set(module.id, moduleGroup);
-        console.log('Added module:', module.id, 'at', module.position);
+        console.log('Added module:', module.id, 'at', module.position, 'floor:', module.floor || 0, 'opacity:', opacity);
       } else {
         const moduleGroup = moduleMeshesRef.current.get(module.id);
         moduleGroup.position.set(module.position.x, module.position.y, module.position.z);
+        
+        // Update floor in userData in case it changed
+        moduleGroup.userData.floor = module.floor || 0;
       }
     });
 
@@ -546,16 +564,31 @@ const Scene = forwardRef(({ habitatStructure, modules, onModulePositionUpdate, p
       tags: module.tags
     });
     
+    console.log('🎨 Created module group:', module.type, 'children count:', moduleGroup.children.length);
+    
+    // Ensure module is visible and materials are properly set
+    moduleGroup.visible = true;
+    
     // Optimize shadows: modules cast shadows but don't receive them from each other
     moduleGroup.traverse((child) => {
       if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = false; // Biggest performance gain
+        child.visible = true; // Ensure mesh is visible
+        
+        // Ensure material exists and has proper properties
+        if (child.material) {
+          child.material.needsUpdate = true;
+          console.log('  ✅ Mesh material:', child.material.type, 'color:', child.material.color?.getHexString());
+        } else {
+          console.warn('  ⚠️ Mesh has no material!');
+        }
       }
     });
     
     // Set position
     moduleGroup.position.set(module.position.x, module.position.y, module.position.z);
+    console.log('📍 Module positioned at:', module.position);
     
     // Apply scale if needed (models are designed at 1:1 scale)
     const scale = (module.size || 1.5) / 1.5;

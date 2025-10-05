@@ -108,6 +108,7 @@ export const useHabitatDesign = () => {
   return {
     habitatStructure,
     modules,
+    setModules,
     currentFloor,
     setCurrentFloor,
     updateHabitatStructure,

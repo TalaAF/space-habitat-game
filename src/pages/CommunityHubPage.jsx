@@ -1,7 +1,9 @@
 // src/pages/CommunityHubPage.jsx
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAppContext } from '../contexts/AppContext.jsx';
 import { fetchAllDesigns } from '../utils/firestoreHelpers';
+import Navigation from '../components/UI/Navigation';
 import DesignCard from '../components/UI/DesignCard';
 import '../styles/index.css';
 
@@ -13,6 +15,7 @@ import '../styles/index.css';
  */
 const CommunityHubPage = () => {
   const navigate = useNavigate();
+  const { setDesignToLoad } = useAppContext();
   const [designs, setDesigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -37,9 +40,13 @@ const CommunityHubPage = () => {
 
   // Handle "Clone & Explore" button click
   const handleCloneExplore = (design) => {
-    // TODO: Implement loading design data into designer
-    console.log('Clone & Explore clicked for design:', design);
-    navigate('/designer', { state: { clonedDesign: design } });
+    console.log('🚀 Cloning design:', design.designName);
+    
+    // Set the design in global context for DesignerPage to pick up
+    setDesignToLoad(design);
+    
+    // Navigate to designer page
+    navigate('/designer');
   };
 
   return (
@@ -54,6 +61,8 @@ const CommunityHubPage = () => {
       padding: '2rem',
       overflowY: 'auto'
     }}>
+      <Navigation />
+      
       {/* Header */}
       <header style={{
         width: '100%',
@@ -64,7 +73,7 @@ const CommunityHubPage = () => {
         <h1 style={{
           fontSize: '2.8rem',
           fontWeight: 'bold',
-          background: 'linear-gradient(to right, #4a9eff, #7b2cbf)',
+          background: 'linear-gradient(to right, #6b9dff, #4d7fcc)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           margin: '0 0 1rem 0'
@@ -81,26 +90,6 @@ const CommunityHubPage = () => {
         }}>
           Explore, learn, and get inspired by habitat designs from architects around the world
         </p>
-
-        <Link to="/designer">
-          <button style={{
-            padding: '0.75rem 1.5rem',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            border: 'none',
-            borderRadius: '8px',
-            color: 'white',
-            fontSize: '1rem',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'transform 0.2s',
-            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
-          }}
-          onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
-          onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
-          >
-            Back to Designer
-          </button>
-        </Link>
       </header>
 
       {/* Main Content */}
