@@ -6,6 +6,8 @@ The Space Habitat Game is an interactive 3D game that allows users to design and
 ## Features
 - **3D Environment**: Explore your habitat in a fully immersive 3D space.
 - **Customizable Layouts**: Design your habitat by adding and arranging different modules and rooms.
+- **AI Assistant**: Get real-time help with space habitat design from an intelligent knowledge base.
+- **Mission Validation**: Analyze your design against NASA standards and requirements.
 - **User Interface**: Intuitive HUD and design panel for easy navigation and design.
 - **Realistic Controls**: Use advanced 3D controls to move around and interact with your habitat.
 
@@ -33,7 +35,7 @@ To get started with the Space Habitat Game, follow these steps:
    ```
 
 5. **Open in Browser**:
-   Navigate to `http://localhost:3000` to start playing the game.
+   Navigate to `http://localhost:3001` to start playing the game.
 
 ## Project Structure
 - **src/**: Contains all the source code for the game.
@@ -43,6 +45,17 @@ To get started with the Space Habitat Game, follow these steps:
   - **assets/**: 3D models, textures, and sound files.
   - **styles/**: CSS files for styling the game.
   - **constants/**: Configuration and specifications for the game.
+
+## Documentation
+
+### AI Assistant
+- **Feature Overview**: `AI_ASSISTANT_GUIDE.md` - Learn about all AI Assistant capabilities
+- **Extending Knowledge**: `EXTENDING_AI_ASSISTANT.md` - Add your own topics to the knowledge base
+
+### Game Features
+- **Mission Readiness**: `MISSION_READINESS_ENGINE.md` - Validation system documentation
+- **3D Model System**: `3D_MODEL_SYSTEM.md` - Module rendering and specifications
+- **Path Analysis**: `PATHFINDING_IMPLEMENTATION.md` - Crew movement validation
 
 ## Contributing
 Contributions are welcome! Please submit a pull request or open an issue for any suggestions or improvements.

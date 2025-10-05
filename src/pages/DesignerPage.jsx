@@ -13,6 +13,7 @@ import MissionReportModal from '../components/UI/MissionReportModal.jsx';
 import PathAnalysisPanel from '../components/UI/PathAnalysisPanel.jsx';
 import ExportMenu from '../components/UI/ExportMenu.jsx';
 import PublishModal from '../components/UI/PublishModal.jsx';
+import AIAssistant from '../components/UI/AIAssistant.jsx';
 import { useGameState } from '../hooks/useGameState.js';
 import { useHabitatDesign } from '../hooks/useHabitatDesign.js';
 import { validateMissionLayout, analyzeMissionReadiness } from '../utils/missionValidation.js';
@@ -53,6 +54,7 @@ const DesignerPage = () => {
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
   const sceneRef = useRef(null);
   const hasLoadedDesign = useRef(false); // Track if we've loaded a cloned design
 
@@ -370,6 +372,18 @@ const DesignerPage = () => {
         onPublish={handlePublish}
         isLoading={isPublishing}
       />
+      {gameState.isRunning && !aiAssistantOpen && (
+        <button
+          className="ai-assistant-fab"
+          onClick={() => setAiAssistantOpen(true)}
+          title="AI Assistant - Ask me anything about space habitats!"
+        >
+          🤖
+        </button>
+      )}
+      {aiAssistantOpen && (
+        <AIAssistant onClose={() => setAiAssistantOpen(false)} />
+      )}
     </div>
   );
 };

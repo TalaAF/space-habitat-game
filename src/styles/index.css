@@ -2614,3 +2614,52 @@ body {
   color: #ffaa00;
   font-size: 0.9rem;
 }
+
+/* AI Assistant Floating Action Button */
+.ai-assistant-fab {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #4488ff 0%, #2266dd 100%);
+  border: none;
+  border-radius: 50%;
+  font-size: 2rem;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(68, 136, 255, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  animation: fabPulse 2s ease-in-out infinite;
+}
+
+.ai-assistant-fab:hover {
+  transform: scale(1.1) rotate(10deg);
+  box-shadow: 0 6px 30px rgba(68, 136, 255, 0.7);
+}
+
+.ai-assistant-fab:active {
+  transform: scale(0.95);
+}
+
+@keyframes fabPulse {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(68, 136, 255, 0.5);
+  }
+  50% {
+    box-shadow: 0 4px 30px rgba(68, 136, 255, 0.8);
+  }
+}
+
+@media (max-width: 768px) {
+  .ai-assistant-fab {
+    width: 56px;
+    height: 56px;
+    font-size: 1.7rem;
+    bottom: 15px;
+    right: 15px;
+  }
+}

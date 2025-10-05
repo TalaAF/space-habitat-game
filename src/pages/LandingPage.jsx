@@ -6,6 +6,8 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Navigation from '../components/UI/Navigation';
 import KnowledgeTest from '../components/UI/KnowledgeTest';
+import AIAssistant from '../components/UI/AIAssistant';
+import { useState } from 'react';
 import '../styles/landing.css';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -18,6 +20,7 @@ const LandingPage = () => {
   const moonRef = useRef(null);
   const haloRef = useRef(null);
   const engineGlowRef = useRef(null);
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -719,6 +722,19 @@ const LandingPage = () => {
       </div>
       
       <Navigation />
+      
+      {!aiAssistantOpen && (
+        <button
+          className="ai-assistant-fab"
+          onClick={() => setAiAssistantOpen(true)}
+          title="AI Assistant - Ask me anything about space habitats!"
+        >
+          🤖
+        </button>
+      )}
+      {aiAssistantOpen && (
+        <AIAssistant onClose={() => setAiAssistantOpen(false)} />
+      )}
     </div>
   );
 };
